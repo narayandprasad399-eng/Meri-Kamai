@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  MonitorSmartphone, BookOpen, CheckCircle, PlayCircle, Tag,
+  MonitorSmartphone, CheckCircle, PlayCircle,
   ShieldCheck, ExternalLink, Star, Users, TrendingUp, Zap,
-  ArrowRight, ChevronDown, BadgeCheck, Flame, Clock, Gift,
-  IndianRupee, Sparkles, Globe, Lock, Award
+  ArrowRight, ChevronDown, BadgeCheck, Flame, IndianRupee, Sparkles, Globe, Lock, Award
 } from 'lucide-react';
 import { FaYoutube, FaInstagram, FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 
@@ -143,7 +142,7 @@ export default function MainSales() {
     { name: 'Rahul M.', city: 'Lucknow, UP', amount: '2,400', text: 'Bhai pehle mahine mein hi ₹2400 aa gaye sirf 4-5 referrals se. Platform bahut simple hai.', avatar: 'R', delay: '0s' },
     { name: 'Priya S.', city: 'Jaipur, RJ', amount: '1,850', text: 'Maine apni Instagram se share kiya aur within 2 weeks wallet bhar gaya. Withdrawal bhi instant tha!', avatar: 'P', delay: '0.1s' },
     { name: 'Amit K.', city: 'Delhi', amount: '5,200', text: 'Mera Telegram group hai 800 log ka. Ek post se ₹5000+ aa gaye. Seriously best passive income hai.', avatar: 'A', delay: '0.2s' },
-    { name: 'Sneha V.', city: 'Pune, MH', amount: '3,100', text: 'Platform itna clean hai ki customers khud trust karte hain. English course bhi solid hai!', avatar: 'S', delay: '0.3s' },
+    { name: 'Sneha V.', city: 'Pune, MH', amount: '3,100', text: 'Platform itna clean hai ki customers khud trust karte hain. Live views tracking bhi solid hai!', avatar: 'S', delay: '0.3s' },
   ];
 
   const faqs = [
@@ -152,7 +151,6 @@ export default function MainSales() {
     { q: 'Refer commission kab milta hai?', a: 'Jaise hi payment verify hoti hai — 24 ghante ke andar wallet mein ₹50 credit ho jaata hai.' },
     { q: 'Minimum withdrawal kitna hai?', a: '₹200 hone par directly apne UPI account mein withdraw kar sakte ho. No bank form, no delays.' },
     { q: 'Kya main multiple apps promote kar sakta hun?', a: 'Haan! Upstox, Navi, PhonePe — apni marzi se koi bhi app choose karo. Aur naye apps regularly add hote rehte hain.' },
-    { q: 'English Course mein kya milega?', a: 'Video modules, daily practice material, aur sabse important — har referral pe ₹50 commission. Course ek baar buy karo, baar baar kamao.' },
   ];
 
   return (
@@ -175,7 +173,7 @@ export default function MainSales() {
       <section className="relative min-h-[92vh] flex flex-col items-center justify-center px-4 py-16 overflow-hidden">
         {/* Background glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#00ff88]/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#00ff88]/5 rounded-full blur-[100px] pointer-events-none" />
         <Particles />
 
         {/* Badge */}
@@ -204,6 +202,7 @@ export default function MainSales() {
 
         {/* CTA Buttons */}
         <div className="relative z-10 flex flex-col sm:flex-row gap-4 mb-12">
+          {/* ✅ FIXED ROUTING LINK */}
           <Link
             to="/dashboard"
             className="group flex items-center justify-center gap-3 bg-[#00ff88] text-[#0a0a0a] font-black text-lg px-8 py-4 rounded-2xl hover:bg-white transition-all duration-200 shadow-[0_0_30px_rgba(0,255,136,0.35)] hover:shadow-[0_0_50px_rgba(0,255,136,0.5)] hover:scale-105"
@@ -212,10 +211,12 @@ export default function MainSales() {
             Apni Dukan Shuru Karo — Free!
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
+          
+          {/* ✅ FIXED EXTERNAL LINK */}
           <a
             href="https://demo.merikamai.in"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 border border-[#00ff88]/40 text-[#00ff88] font-bold text-base px-6 py-4 rounded-2xl hover:bg-[#00ff88]/10 transition-all duration-200"
           >
             <ExternalLink className="w-4 h-4" />
@@ -289,19 +290,40 @@ export default function MainSales() {
         </div>
       </section>
 
-      {/* ── Product Cards ── */}
+      {/* ── Plan Explainer Video (MOVED UP HERE) ── */}
+      <section className="py-16 px-4 max-w-4xl mx-auto">
+        <div className="bg-[#0d1410] border border-[#00ff88]/20 rounded-3xl p-6 sm:p-8 shadow-[0_0_40px_rgba(0,255,136,0.04)]">
+          <div className="text-center mb-6">
+            <p className="text-[#00ff88] font-bold text-sm uppercase tracking-widest mb-3">Watch First</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white mb-2 flex items-center justify-center gap-2">
+              <PlayCircle className="text-[#00ff88] w-7 h-7" /> Pura Plan 5 Min Mein Samjho
+            </h2>
+            <p className="text-gray-500 text-sm">Real numbers, real system, real earning proof.</p>
+          </div>
+          <div className="bg-black rounded-2xl overflow-hidden aspect-video relative border border-gray-800">
+            <iframe
+              width="100%" height="100%"
+              src="https://www.youtube.com/embed/YOUR_PLAN_VIDEO_ID"
+              title="Meri Kamai Business Plan"
+              frameBorder="0" allowFullScreen
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Product Card (Single Focus) ── */}
       <section className="py-8 px-4 max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <p className="text-[#00ff88] font-bold text-sm uppercase tracking-widest mb-3">Choose Your Path</p>
-          <h2 className="text-3xl sm:text-4xl font-black text-white">Do Tarike Kamane Ke</h2>
+          <p className="text-[#00ff88] font-bold text-sm uppercase tracking-widest mb-3">Start Now</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-white">Apni Digital Dukan Kholo</h2>
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
-
-          {/* Product 1: Earning Shop */}
+        
+        {/* Centered Single Product Card */}
+        <div className="max-w-md mx-auto">
           <div className="relative bg-gradient-to-b from-[#0d1a11] to-[#080d09] border-2 border-[#00ff88]/40 rounded-3xl p-7 flex flex-col shadow-[0_0_40px_rgba(0,255,136,0.07)] hover:shadow-[0_0_60px_rgba(0,255,136,0.15)] hover:border-[#00ff88]/70 transition-all duration-300">
             {/* Popular Badge */}
             <div className="absolute -top-3.5 left-6 bg-[#00ff88] text-[#0a0a0a] text-xs font-black px-4 py-1 rounded-full flex items-center gap-1">
-              <Flame className="w-3 h-3" /> MOST POPULAR
+              <Flame className="w-3 h-3" /> BEST DEAL
             </div>
 
             <div className="flex items-center gap-3 mb-5">
@@ -352,110 +374,23 @@ export default function MainSales() {
             </ul>
 
             <div className="space-y-3 mt-auto">
+              {/* ✅ FIXED ROUTING LINK */}
               <Link
                 to="/dashboard"
                 className="group block w-full text-center bg-[#00ff88] text-[#0a0a0a] font-black py-4 rounded-2xl hover:bg-white transition-all shadow-[0_0_20px_rgba(0,255,136,0.25)] hover:shadow-[0_0_35px_rgba(0,255,136,0.4)] text-base"
               >
                 Create My Shop Now →
               </Link>
+              {/* ✅ FIXED EXTERNAL LINK */}
               <a
                 href="https://demo.merikamai.in"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full text-center border border-[#00ff88]/30 text-[#00ff88] font-bold py-3.5 rounded-2xl hover:bg-[#00ff88]/8 transition-all text-sm"
               >
                 <ExternalLink className="w-4 h-4" /> View Live Demo Shop
               </a>
             </div>
-          </div>
-
-          {/* Product 2: English Course */}
-          <div className="relative bg-gradient-to-b from-[#0d1120] to-[#080a12] border-2 border-blue-500/30 rounded-3xl p-7 flex flex-col hover:border-blue-400/60 transition-all duration-300 overflow-hidden">
-            <div className="absolute -top-3.5 left-6 bg-red-600 text-white text-xs font-black px-4 py-1 rounded-full flex items-center gap-1">
-              <Gift className="w-3 h-3" /> 50% INSTANT OFF
-            </div>
-            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/5 rounded-full blur-[60px] pointer-events-none" />
-
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-white">Spoken English Mastery</h2>
-                <p className="text-blue-400 text-xs font-semibold">Life-changing skill course</p>
-              </div>
-            </div>
-
-            <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-              Fluency badhao, confidence lao, career set karo. Ek aisi skill jo lifetime kaam aayegi — aur isi course ki referral se <strong className="text-blue-300">₹50 baar baar milta rahega</strong>.
-            </p>
-
-            <div className="flex items-end gap-3 mb-2">
-              <span className="text-3xl font-black text-gray-500 line-through">₹999</span>
-              <div className="flex flex-col pb-1">
-                <span className="text-5xl font-black text-white leading-none">₹499</span>
-                <span className="text-blue-400 text-xs font-bold">with refer code</span>
-              </div>
-            </div>
-
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-3.5 mb-6 flex items-start gap-2.5">
-              <Tag className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-200">
-                Dost ka code lao → flat ₹500 off. <strong>Koi bhi code kaam karega.</strong>
-              </p>
-            </div>
-
-            <ul className="space-y-3 mb-8 flex-grow">
-              {[
-                'Full Video Course Modules (HD)',
-                'Daily Practice Material',
-                'Lifetime Access — No Expiry',
-                '₹50 Commission Per Referral',
-                'Mobile + Desktop Access',
-                'New Modules Added Regularly',
-              ].map((f, i) => (
-                <li key={i} className="flex items-center gap-2.5 text-sm text-gray-300">
-                  <CheckCircle className="w-4 h-4 text-blue-400 shrink-0" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <div className="space-y-3 mt-auto">
-              <Link
-                to="/checkout?product=course"
-                className="block w-full text-center bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-500 transition-all shadow-[0_0_20px_rgba(59,130,246,0.25)] hover:shadow-[0_0_35px_rgba(59,130,246,0.4)] text-base"
-              >
-                Buy Course @ ₹499 (Code Lao) →
-              </Link>
-              <Link
-                to="/course"
-                className="flex items-center justify-center gap-2 w-full text-center border border-blue-500/30 text-blue-400 font-bold py-3.5 rounded-2xl hover:bg-blue-900/20 transition-all text-sm"
-              >
-                <PlayCircle className="w-4 h-4" /> Watch Free Demo Class
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Plan Explainer Video ── */}
-      <section className="py-16 px-4 max-w-4xl mx-auto">
-        <div className="bg-[#0d1410] border border-[#00ff88]/20 rounded-3xl p-6 sm:p-8 shadow-[0_0_40px_rgba(0,255,136,0.04)]">
-          <div className="text-center mb-6">
-            <p className="text-[#00ff88] font-bold text-sm uppercase tracking-widest mb-3">Watch First</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-white mb-2 flex items-center justify-center gap-2">
-              <PlayCircle className="text-[#00ff88] w-7 h-7" /> Pura Plan 5 Min Mein Samjho
-            </h2>
-            <p className="text-gray-500 text-sm">Real numbers, real system, real earning proof.</p>
-          </div>
-          <div className="bg-black rounded-2xl overflow-hidden aspect-video relative border border-gray-800">
-            <iframe
-              width="100%" height="100%"
-              src="https://www.youtube.com/embed/YOUR_PLAN_VIDEO_ID"
-              title="Meri Kamai Business Plan"
-              frameBorder="0" allowFullScreen
-            />
           </div>
         </div>
       </section>
@@ -527,6 +462,7 @@ export default function MainSales() {
             <p className="text-gray-400 mb-8 text-lg">
               Ek click mein apni earning website live. Zero risk. Sirf ₹9.
             </p>
+            {/* ✅ FIXED ROUTING LINK */}
             <Link
               to="/dashboard"
               className="inline-flex items-center gap-3 bg-[#00ff88] text-[#0a0a0a] font-black text-lg px-10 py-4.5 rounded-2xl hover:bg-white transition-all shadow-[0_0_40px_rgba(0,255,136,0.4)] hover:scale-105"

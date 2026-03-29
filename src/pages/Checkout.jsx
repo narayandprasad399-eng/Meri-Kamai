@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Tag, CheckCircle, ShieldCheck, Loader2 } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Tag, CheckCircle, ShieldCheck, Loader2, Globe } from 'lucide-react';
 import { supabase } from '../services/supabase';
-// Razorpay script load karne ka function
+import { useAuth } from '../context/AuthContext';
+
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     const script = document.createElement("script");
@@ -12,8 +13,16 @@ const loadRazorpayScript = () => {
     document.body.appendChild(script);
   });
 };
+
 export default function Checkout() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // 1. URL padhkar Product Type pata karo
+  const productType = searchParams.get('product') || 'course';
+  const isRent = productType === 'rent';
+  
   const initialRef = searchParams.get('ref') || '';
   
   const [promoCode, setPromoCode] = useState(initialRef);
@@ -21,24 +30,31 @@ export default function Checkout() {
   const [referrerData, setReferrerData] = useState(null);
   const [loadingCode, setLoadingCode] = useState(false);
   
-  // Pricing Logic
-  const basePrice = 999;
-  const discount = 500;
-  const finalPrice = isApplied ? basePrice - discount : basePrice;
+  // 2. Dynamic Pricing Logic (Rent ke liye direct 21, warna course logic)
+  const basePrice = isRent ? 21 : 999;
+  const discount = isRent ? 0 : 500;
+  const finalPrice = (isApplied && !isRent) ? basePrice - discount : basePrice;
 
-  // Auto-apply if code comes from URL
+  // Title and Desc
+  const titleText = isRent ? "1 Month Shop Server Rent" : "Spoken English Mastery";
+  const descText = isRent ? "Activate your digital shop for 30 days" : "Full Video Course Access";
+
   useEffect(() => {
-    if (initialRef) {
+    // Agar user logged in nahi hai, toh login/dashboard par bhejo
+    if (!user) {
+      navigate('/dashboard');
+    }
+    if (initialRef && !isRent) {
       handleApplyCode(initialRef);
     }
-  }, []);
+  }, [user, navigate, initialRef, isRent]);
 
   const handleApplyCode = async (codeToApply = promoCode) => {
+    if (isRent) return; // Rent par promo applicable nahi
     if (!codeToApply || codeToApply.length < 4) return alert("Enter a valid code");
     
     setLoadingCode(true);
     try {
-      // Database Check: Does this code exist?
       const { data, error } = await supabase
         .from('users')
         .select('id, full_name')
@@ -51,7 +67,7 @@ export default function Checkout() {
         setReferrerData(null);
       } else {
         setIsApplied(true);
-        setReferrerData(data); // Save who gets the ₹50
+        setReferrerData(data);
       }
     } catch (err) {
       console.error(err);
@@ -61,22 +77,23 @@ export default function Checkout() {
   };
 
   const handlePayment = async () => {
-    // 1. Script load karo
+    if (!user) return alert("Please login first!");
+
     const res = await loadRazorpayScript();
     if (!res) return alert("Razorpay fail! Internet check karo.");
 
     setLoadingCode(true);
     try {
-      // 2. Cloudflare Worker se Asli Order ID mangwana
-      // TODO: 'YOUR_WORKER_URL' ki jagah apne deployed worker ka link daalna
       const WORKER_URL = import.meta.env.VITE_WORKER_URL;
+      
+      // Step 1: Create Order
       const orderRes = await fetch(`${WORKER_URL}/api/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productType: "course", // ya "rent" agar rent ka page ho
-          promoCode: isApplied ? promoCode : "none",
-          userId: user.id, // Supabase user ID (Auth context se)
+          productType: productType, 
+          promoCode: (isApplied && !isRent) ? promoCode : "none",
+          userId: user.id, 
           email: user.email,
         })
       });
@@ -84,18 +101,18 @@ export default function Checkout() {
 
       if (!orderData.id) throw new Error("Order creation failed");
 
-      // 3. Razorpay Popup Open
+      // Step 2: Open Razorpay
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Tera Razorpay Key
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
         amount: finalPrice * 100,
         currency: "INR",
         name: "Meri Kamai",
-        description: "Spoken English Mastery",
+        description: titleText,
         order_id: orderData.id, 
         handler: async function (response) {
           
-          // 4. Payment Success hone par Worker ko Verify karne bolna (Aur ₹50 Commission batna)
-          const verifyRes = await fetch("https://hackthewealth.narayandprasad399.workers.dev/api/verify-payment", {
+          // Step 3: Verify Payment
+          const verifyRes = await fetch(`${WORKER_URL}/api/verify-payment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -103,15 +120,15 @@ export default function Checkout() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
               userId: user.id,
-              productType: "course",
-              promoCode: isApplied ? promoCode : "none"
+              productType: productType,
+              promoCode: (isApplied && !isRent) ? promoCode : "none"
             })
           });
 
           const verifyData = await verifyRes.json();
           if (verifyData.success) {
-            alert("Payment Successful! Course Unlocked.");
-            window.location.href = "/dashboard"; // Payment ke baad wapas dashboard
+            alert(isRent ? "Shop Unlocked Successfully!" : "Payment Successful! Course Unlocked.");
+            window.location.href = "/dashboard";
           } else {
             alert("Payment verification failed! Support se contact karein.");
           }
@@ -129,53 +146,58 @@ export default function Checkout() {
     }
   };
 
-    
-
   return (
     <div className="min-h-screen bg-brandDark text-brandText pt-10 px-4">
       <div className="max-w-md mx-auto bg-brandCard border border-gray-800 rounded-2xl p-6 shadow-2xl">
         
-        <h1 className="text-2xl font-bold text-white mb-6 border-b border-gray-800 pb-4">Checkout</h1>
+        <h1 className="text-2xl font-bold text-white mb-6 border-b border-gray-800 pb-4">
+          Checkout {isRent && <span className="text-sm font-normal text-gray-400 bg-gray-800 px-2 py-1 rounded ml-2">Shop Rent</span>}
+        </h1>
         
         <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="font-bold text-lg text-white">Spoken English Mastery</h2>
-            <p className="text-xs text-gray-400">Full Video Course Access</p>
+          <div className="flex items-center gap-3">
+            {isRent && <Globe className="w-8 h-8 text-brandGreen" />}
+            <div>
+              <h2 className="font-bold text-lg text-white">{titleText}</h2>
+              <p className="text-xs text-gray-400">{descText}</p>
+            </div>
           </div>
           <span className="text-lg font-bold text-gray-300">₹{basePrice}</span>
         </div>
 
-        {/* Dynamic Promo Code Logic */}
-        <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
-          <label className="text-xs text-gray-400 mb-2 block">Have a VIP Promo/Referral Code?</label>
-          <div className="flex gap-2">
-            <input 
-              type="text" 
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              disabled={isApplied}
-              placeholder="Enter Code (e.g. NEER101)" 
-              className="bg-brandDark border border-gray-600 rounded px-3 py-2 text-sm w-full uppercase text-white focus:border-brandGreen outline-none disabled:opacity-50"
-            />
-            <button 
-              onClick={() => handleApplyCode()}
-              disabled={isApplied || loadingCode}
-              className={`px-4 py-2 rounded text-sm font-bold transition-all flex items-center gap-2 ${isApplied ? 'bg-green-500/20 text-green-400' : 'bg-brandGreen text-brandDark hover:bg-green-400'}`}
-            >
-              {loadingCode ? <Loader2 className="w-4 h-4 animate-spin"/> : (isApplied ? 'Applied!' : 'Apply')}
-            </button>
+        {/* Promo Code Logic: Sirf Course ke liye dikhega */}
+        {!isRent && (
+          <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
+            <label className="text-xs text-gray-400 mb-2 block">Have a VIP Promo/Referral Code?</label>
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                disabled={isApplied}
+                placeholder="Enter Code (e.g. NEER101)" 
+                className="bg-brandDark border border-gray-600 rounded px-3 py-2 text-sm w-full uppercase text-white focus:border-brandGreen outline-none disabled:opacity-50"
+              />
+              <button 
+                onClick={() => handleApplyCode()}
+                disabled={isApplied || loadingCode}
+                className={`px-4 py-2 rounded text-sm font-bold transition-all flex items-center gap-2 ${isApplied ? 'bg-green-500/20 text-green-400' : 'bg-brandGreen text-brandDark hover:bg-green-400'}`}
+              >
+                {loadingCode ? <Loader2 className="w-4 h-4 animate-spin"/> : (isApplied ? 'Applied!' : 'Apply')}
+              </button>
+            </div>
+            {isApplied && (
+              <p className="text-xs text-brandGreen mt-2 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3"/> Awesome! You got a flat ₹500 discount via {referrerData?.full_name?.split(' ')[0] || 'Referrer'}.
+              </p>
+            )}
           </div>
-          {isApplied && (
-            <p className="text-xs text-brandGreen mt-2 flex items-center gap-1">
-              <CheckCircle className="w-3 h-3"/> Awesome! You got a flat ₹500 discount via {referrerData?.full_name?.split(' ')[0]}.
-            </p>
-          )}
-        </div>
+        )}
 
         {/* Price Breakdown */}
         <div className="space-y-2 border-t border-gray-800 pt-4 mb-6 text-sm">
-          <div className="flex justify-between text-gray-400"><span>Course Price</span><span>₹{basePrice}</span></div>
-          {isApplied && (
+          <div className="flex justify-between text-gray-400"><span>Item Price</span><span>₹{basePrice}</span></div>
+          {isApplied && !isRent && (
             <div className="flex justify-between text-brandGreen font-medium"><span>Promo Discount</span><span>- ₹{discount}</span></div>
           )}
           <div className="flex justify-between text-white text-xl font-bold pt-2 border-t border-gray-800">

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Wallet, Copy, Link as LinkIcon, Edit2, CheckCircle, Share2,
   TrendingUp, Eye, Loader2, ExternalLink, PlusCircle,
-  Bell, ArrowUpRight, Clock, Zap, ShieldCheck, BadgeCheck,
-  IndianRupee, BarChart3, ChevronRight
+  Clock, Zap, ArrowUpRight, Lock, Unlock, PlayCircle, ShieldCheck, Globe
 } from 'lucide-react';
+import { FaGoogle } from 'react-icons/fa';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+import AppLinksManager from '../components/AppLinksManager'; // 🚀 NAYA COMPONENT IMPORT KIYA HAI
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, sub, color = 'text-[#00ff88]', border = 'border-[#00ff88]/15' }) {
@@ -21,45 +22,56 @@ function StatCard({ icon, label, value, sub, color = 'text-[#00ff88]', border = 
   );
 }
 
-// ─── Input Field ──────────────────────────────────────────────────────────────
-function AppInput({ placeholder, value, onChange }) {
-  return (
-    <input
-      type="text"
-      placeholder={placeholder}
-      value={value || ''}
-      onChange={onChange}
-      className="w-full bg-[#0a0f0a] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-700 focus:border-[#00ff88]/50 focus:outline-none transition-colors"
-    />
-  );
-}
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+// ─── Dashboard Component ──────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [profile, setProfile] = useState(null);
+  
+  // Social Links State (Bhavishya ke liye rakha hai agar dashboard se update karna ho)
   const [settings, setSettings] = useState({
-    youtube_link: '', instagram_link: '', telegram_link: '',
-    whatsapp_link: '', app_links: {}
+    youtube_link: '', instagram_link: '', telegram_link: '', whatsapp_link: ''
   });
-  const [saveStatus, setSaveStatus] = useState({ apps: '', socials: '' });
+
+  // Dynamic Training State
+  const [trainingVideos, setTrainingVideos] = useState([]);
+
+  // UI States
+  const [copied, setCopied] = useState(false);
+  const [saveStatus, setSaveStatus] = useState({ socials: '' });
+  
+  // Subdomain Claim States
+  const [claimName, setClaimName] = useState('');
+  const [whatsappNum, setWhatsappNum] = useState('');
+  const [claimStatus, setClaimStatus] = useState(''); // 'checking', 'available', 'taken', 'error'
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { navigate('/'); return; }
+    
+    // Agar user nahi hai, loading false karo taaki login screen dikhe
+    if (!user) { 
+      setLoading(false); 
+      return; 
+    }
 
     const fetchDashboardData = async () => {
       try {
-        const { data: userData } = await supabase
-          .from('users').select('*').eq('id', user.id).single();
+        // 1. Fetch User Profile
+        const { data: userData } = await supabase.from('users').select('*').eq('id', user.id).single();
         if (userData) setProfile(userData);
 
-        const { data: settingsData } = await supabase
-          .from('user_settings').select('*').eq('user_id', user.id).single();
-        if (settingsData) setSettings(settingsData);
+        // 2. Fetch User Settings (Only Socials now, AppLinksManager handles apps)
+        const { data: settingsData } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single();
+        if (settingsData) {
+          setSettings(prev => ({ ...prev, ...settingsData }));
+        }
+
+        // 3. Fetch Dynamic Training Videos
+        const { data: videoData } = await supabase.from('training_videos').select('*').order('created_at', { ascending: false });
+        if (videoData) setTrainingVideos(videoData);
+
       } catch (error) {
         console.error('Dashboard Error:', error.message);
       } finally {
@@ -68,20 +80,42 @@ export default function Dashboard() {
     };
 
     fetchDashboardData();
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading]);
 
-  const handleSaveSettings = async (type) => {
-    const key = type === 'App Links' ? 'apps' : 'socials';
-    setSaveStatus(s => ({ ...s, [key]: 'saving' }));
+  // ─── Login Logic ───
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({ 
+      provider: 'google', 
+      options: { redirectTo: window.location.origin + '/dashboard' } 
+    });
+  };
+
+  // ─── Subdomain & WhatsApp Logic ───
+  const handleClaimSubdomain = async () => {
+    const formattedName = claimName.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    if (formattedName.length < 3) return alert("Shop name kam se kam 3 letters ka hona chahiye!");
+    if (whatsappNum.length < 10) return alert("Sahi WhatsApp number daalo bhai!");
+
+    const blockedWords = ['admin', 'support', 'help', 'api', 'merikamai', 'official', 'test'];
+    if (blockedWords.includes(formattedName)) return alert("Yeh VIP naam allowed nahi hai!");
+
+    setClaimStatus('checking');
     try {
-      const { error } = await supabase
-        .from('user_settings').update(settings).eq('user_id', user.id);
+      // Check if taken
+      const { data: existingUser } = await supabase.from('users').select('id').eq('subdomain', formattedName).maybeSingle();
+      if (existingUser) {
+        setClaimStatus('taken');
+        return;
+      }
+      // Save
+      const { error } = await supabase.from('users').update({ subdomain: formattedName, phone: whatsappNum }).eq('id', user.id);
       if (error) throw error;
-      setSaveStatus(s => ({ ...s, [key]: 'saved' }));
-      setTimeout(() => setSaveStatus(s => ({ ...s, [key]: '' })), 2500);
-    } catch {
-      setSaveStatus(s => ({ ...s, [key]: 'error' }));
-      setTimeout(() => setSaveStatus(s => ({ ...s, [key]: '' })), 2500);
+      
+      setProfile({ ...profile, subdomain: formattedName, phone: whatsappNum });
+      setClaimStatus('available');
+    } catch (err) {
+      console.error(err);
+      setClaimStatus('error');
     }
   };
 
@@ -89,29 +123,6 @@ export default function Dashboard() {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSuggestApp = () => {
-    const appName = prompt('Kaunsa naya app add karwana chahte ho? (e.g. Groww, Angel One)');
-    if (appName) {
-      alert(`✅ Shukriya! "${appName}" ka suggestion mil gaya. Hum jaldi add karenge.`);
-    }
-  };
-
-  const handleWithdraw = async () => {
-    if ((profile?.wallet_balance || 0) < 200) return;
-    const upi = prompt('Apna UPI ID dalo (e.g. name@upi):');
-    if (upi && upi.includes('@')) {
-      alert(`✅ Withdrawal request ₹${profile.wallet_balance} for ${upi} submitted! 24 hours mein process hoga.`);
-    } else if (upi) {
-      alert('Invalid UPI ID. Please check and try again.');
-    }
-  };
-
-  const getRentDaysLeft = () => {
-    if (!profile?.rent_valid_upto) return 0;
-    const diffTime = new Date(profile.rent_valid_upto) - new Date();
-    return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   };
 
   if (loading || authLoading) {
@@ -123,283 +134,202 @@ export default function Dashboard() {
     );
   }
 
+  // ─── GATE 1: User Not Logged In ───
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#070a08] flex items-center justify-center p-4">
+        <div className="bg-[#0d1410] border border-[#00ff88]/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,255,136,0.1)] text-center">
+          <div className="w-16 h-16 bg-[#00ff88]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-[#00ff88]" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-2">Login to Continue</h2>
+          <p className="text-gray-400 text-sm mb-8">Apni dukan banane aur dashboard access karne ke liye secure login karein.</p>
+          <button 
+            onClick={handleGoogleLogin}
+            className="flex items-center justify-center gap-3 w-full bg-white text-black font-black py-4 rounded-xl hover:bg-gray-200 transition-all shadow-lg hover:scale-105"
+          >
+            <FaGoogle className="w-5 h-5 text-blue-600" /> Continue with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── GATE 2: Subdomain & WhatsApp Claim Screen ───
+  if (!profile?.subdomain) {
+    return (
+      <div className="min-h-screen bg-[#070a08] flex items-center justify-center p-4">
+        <div className="bg-[#0d1410] border border-[#00ff88]/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,255,136,0.1)] text-center">
+          <Globe className="w-12 h-12 text-[#00ff88] mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-white mb-2">Shop Setup Complete Karo</h2>
+          <p className="text-gray-400 text-sm mb-6">Apni dukan ka naam aur apna WhatsApp number daalein.</p>
+          
+          <div className="flex flex-col gap-4 mb-6 text-left">
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1 block">Shop URL (No spaces)</label>
+              <div className="flex items-center bg-[#0a0f0a] border border-gray-700 rounded-xl overflow-hidden focus-within:border-[#00ff88]/50 transition-colors">
+                <input 
+                  type="text" 
+                  placeholder="e.g. rahul-offers" 
+                  value={claimName}
+                  onChange={(e) => setClaimName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  className="flex-1 bg-transparent px-4 py-3 text-white outline-none placeholder-gray-600 font-semibold"
+                />
+                <span className="text-gray-500 pr-4 font-medium text-sm select-none">.merikamai.in</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-500 mb-1 block">WhatsApp Number</label>
+              <input 
+                type="number" 
+                placeholder="10 digit active number" 
+                value={whatsappNum}
+                onChange={(e) => setWhatsappNum(e.target.value)}
+                className="w-full bg-[#0a0f0a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#00ff88]/50 font-semibold placeholder-gray-600"
+              />
+            </div>
+
+            {claimStatus === 'taken' && <p className="text-red-400 text-xs font-bold text-center">❌ Yeh naam pehle se kisi ne liya hua hai.</p>}
+            {claimStatus === 'error' && <p className="text-red-400 text-xs font-bold text-center">❌ Server error, please try again.</p>}
+          </div>
+
+          <button 
+            onClick={handleClaimSubdomain}
+            disabled={!claimName || !whatsappNum || claimStatus === 'checking'}
+            className="w-full bg-[#00ff88] text-[#0a0a0a] font-black py-3.5 rounded-xl hover:bg-white transition-all shadow-[0_0_20px_rgba(0,255,136,0.2)] disabled:opacity-50"
+          >
+            {claimStatus === 'checking' ? 'Processing...' : 'Save & Continue'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── GATE 3: Paywall (Lock) Screen (₹21) ───
+  const isLocked = !profile?.rent_valid_upto || new Date(profile.rent_valid_upto) < new Date();
+  if (isLocked) {
+    return (
+      <div className="min-h-screen bg-[#070a08] flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#00ff88]/10 blur-[100px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 bg-gradient-to-b from-[#0d1a11] to-[#080d09] border border-[#00ff88]/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,255,136,0.15)] text-center">
+          <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Lock className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-3xl font-black text-white mb-2">Shop is Locked</h2>
+          <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+            Tumhara URL <strong className="text-[#00ff88]">{profile.subdomain}.merikamai.in</strong> reserve ho gaya hai! <br/>
+            Apni dukan ko duniya ke liye live karne aur kamai shuru karne ke liye ₹21 server rent pay karein.
+          </p>
+          
+          <div className="bg-[#0a0f0a] border border-gray-800 rounded-xl p-4 flex justify-between items-center mb-6">
+            <span className="text-gray-400 text-sm font-semibold">1 Month Server Rent</span>
+            <span className="text-2xl font-black text-[#00ff88]">₹21</span>
+          </div>
+
+          <Link 
+            to="/checkout?product=rent"
+            className="flex items-center justify-center gap-2 w-full bg-[#00ff88] text-[#0a0a0a] font-black py-4 rounded-xl hover:bg-white transition-all shadow-[0_0_30px_rgba(0,255,136,0.3)] hover:scale-[1.02]"
+          >
+            <Unlock className="w-5 h-5" /> Pay ₹21 & Unlock Shop
+          </Link>
+          <p className="text-gray-600 text-xs mt-4 flex items-center justify-center gap-1">
+            <ShieldCheck className="w-4 h-4" /> 100% Secured by Razorpay
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── GATE 4: Full Dashboard ───
   const displayName = profile?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || 'User';
-  const userShopUrl = profile?.subdomain ? `https://${profile.subdomain}.merikamai.in` : '#';
+  const userShopUrl = `https://${profile.subdomain}.merikamai.in`;
   const walletBalance = profile?.wallet_balance || 0;
-  const daysLeft = getRentDaysLeft();
-  const toWithdraw = Math.max(0, 200 - walletBalance);
+  
+  const diffTime = new Date(profile.rent_valid_upto) - new Date();
+  const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
   return (
     <div className="min-h-screen bg-[#070a08] text-[#e5e5e5] pb-20 pt-6 px-4">
-      <div className="max-w-2xl mx-auto space-y-5">
+      <div className="max-w-2xl mx-auto space-y-6">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-black text-white capitalize">
-              Hi, {displayName}! 🚀
-            </h1>
-            <div className={`inline-flex items-center gap-1.5 mt-1.5 text-xs font-bold px-2.5 py-1 rounded-full ${
-              daysLeft > 7 ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20' :
-              daysLeft > 0 ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
-              'bg-red-500/10 text-red-400 border border-red-500/20'
-            }`}>
-              <Clock className="w-3 h-3" />
-              Shop Rent: {daysLeft > 0 ? `${daysLeft} Days Left` : 'EXPIRED — Renew Now!'}
+            <h1 className="text-2xl font-black text-white capitalize">Hi, {displayName}! 🚀</h1>
+            <div className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/20">
+              <Clock className="w-3 h-3" /> Shop Rent: {daysLeft} Days Left
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span className="text-xs text-gray-500 flex items-center gap-1">
-              <Eye className="w-3 h-3" /> Live Views
-            </span>
-            {profile?.subdomain && (
-              <img
-                src={`https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=${userShopUrl}&count_bg=%2300FF88&title_bg=%23111827&icon=&icon_color=%23E7E7E7&title=Hits&edge_flat=true`}
-                alt="Views"
-                className="rounded"
-              />
-            )}
+            <span className="text-xs text-gray-500 flex items-center gap-1"><Eye className="w-3 h-3" /> Live Views</span>
+            <img src={`https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=${userShopUrl}&count_bg=%2300FF88&title_bg=%23111827&icon=&icon_color=%23E7E7E7&title=Hits&edge_flat=true`} alt="Views" className="rounded" />
           </div>
         </div>
 
-        {/* ── Stats Row ── */}
+        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard
-            icon={<Wallet className="w-4 h-4" />}
-            label="Wallet Balance"
-            value={`₹${walletBalance}`}
-            sub={walletBalance >= 200 ? '✓ Ready to withdraw' : `₹${toWithdraw} more to go`}
-          />
-          <StatCard
-            icon={<BarChart3 className="w-4 h-4" />}
-            label="Total Referrals"
-            value={profile?.total_referrals || 0}
-            sub="This month"
-            color="text-blue-400"
-            border="border-blue-500/15"
-          />
-          <StatCard
-            icon={<TrendingUp className="w-4 h-4" />}
-            label="Total Earned"
-            value={`₹${profile?.total_earned || 0}`}
-            sub="All time"
-            color="text-purple-400"
-            border="border-purple-500/15"
-          />
-          <StatCard
-            icon={<Eye className="w-4 h-4" />}
-            label="Shop Views"
-            value={profile?.total_views || '—'}
-            sub="Live tracker"
-            color="text-yellow-400"
-            border="border-yellow-500/15"
-          />
+          <StatCard icon={<Wallet className="w-4 h-4" />} label="Wallet Balance" value={`₹${walletBalance}`} />
+          <StatCard icon={<TrendingUp className="w-4 h-4" />} label="Total Earned" value={`₹${profile?.total_earned || 0}`} color="text-blue-400" border="border-blue-500/15" />
+          <StatCard icon={<Eye className="w-4 h-4" />} label="Shop Views" value={profile?.total_views || '0'} color="text-yellow-400" border="border-yellow-500/15" />
+          <StatCard icon={<Share2 className="w-4 h-4" />} label="Total Referrals" value={profile?.total_referrals || 0} color="text-purple-400" border="border-purple-500/15" />
         </div>
 
-        {/* ── Wallet Card ── */}
-        <div className="bg-gradient-to-br from-[#0d1a11] to-[#080d09] border border-[#00ff88]/25 rounded-2xl p-6 shadow-[0_0_30px_rgba(0,255,136,0.05)]">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-bold text-sm text-gray-400 flex items-center gap-2">
-              <Wallet className="text-[#00ff88] w-4 h-4" /> Wallet Balance
-            </h2>
-            <div className="text-xs font-bold text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/20 px-2.5 py-1 rounded-full">
-              Min. ₹200 to withdraw
-            </div>
-          </div>
-
-          <h3 className="text-5xl font-black text-white mb-1">
-            <span className="text-[#00ff88] text-3xl mr-1">₹</span>{walletBalance}
-          </h3>
-          <p className="text-gray-600 text-xs mb-5">
-            {walletBalance >= 200 ? '🎉 Withdrawal available!' : `₹${toWithdraw} more needed`}
-          </p>
-
-          {/* Progress Bar */}
-          <div className="h-1.5 bg-gray-800 rounded-full mb-5 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#00ff88] to-[#00cc66] rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(100, (walletBalance / 200) * 100)}%` }}
-            />
-          </div>
-
-          <button
-            onClick={handleWithdraw}
-            disabled={walletBalance < 200}
-            className={`w-full font-black py-3.5 rounded-xl transition-all text-sm flex items-center justify-center gap-2 ${
-              walletBalance >= 200
-                ? 'bg-[#00ff88] text-[#0a0a0a] hover:bg-white shadow-[0_0_20px_rgba(0,255,136,0.25)]'
-                : 'bg-gray-800/80 text-gray-600 cursor-not-allowed'
-            }`}
-          >
-            <ArrowUpRight className="w-4 h-4" />
-            {walletBalance >= 200 ? 'Withdraw to UPI' : `Need ₹${toWithdraw} More`}
-          </button>
-        </div>
-
-        {/* ── Refer & Earn ── */}
-        <div className="bg-[#0d1120] border border-blue-500/20 rounded-2xl p-5">
-          <h2 className="font-black text-white mb-4 flex items-center gap-2">
-            <LinkIcon className="w-5 h-5 text-blue-400" /> Refer & Earn ₹50
-          </h2>
-
-          {/* Shop Link */}
+        {/* Refer Box */}
+        <div className="bg-[#0d1410] border border-gray-800 rounded-2xl p-5">
+          <h2 className="font-black text-white mb-4 text-sm uppercase tracking-wider text-gray-400">Your Earning Links</h2>
+          
           <div className="bg-[#070a08] rounded-xl p-3 border border-gray-800 mb-4">
-            <p className="text-[10px] text-gray-600 mb-2 uppercase tracking-wider font-bold">Your Live Shop URL</p>
+            <p className="text-[10px] text-gray-500 mb-2 uppercase tracking-wider font-bold">Your Live Shop URL</p>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm text-[#00ff88] font-semibold truncate flex-1">
-                {profile?.subdomain ? `${profile.subdomain}.merikamai.in` : 'Loading...'}
-              </span>
+              <span className="text-sm text-[#00ff88] font-semibold truncate flex-1">{userShopUrl}</span>
               <div className="flex items-center gap-1 border-l border-gray-800 pl-2 shrink-0">
-                <a href={userShopUrl} target="_blank" rel="noreferrer"
-                  className="p-1.5 text-blue-400 hover:text-white transition-colors rounded-lg hover:bg-blue-900/20" title="View Shop">
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-                <button onClick={() => handleCopy(userShopUrl)}
-                  className="p-1.5 text-[#00ff88] hover:text-white transition-colors rounded-lg hover:bg-[#00ff88]/10" title="Copy Link">
+                <a href={userShopUrl} target="_blank" rel="noreferrer" className="p-1.5 text-blue-400 hover:text-white transition-colors rounded-lg hover:bg-blue-900/20"><ExternalLink className="w-4 h-4" /></a>
+                <button onClick={() => handleCopy(userShopUrl)} className="p-1.5 text-[#00ff88] hover:text-white transition-colors rounded-lg hover:bg-[#00ff88]/10">
                   {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Promo Code Box */}
-          <div className="bg-blue-900/15 rounded-xl p-4 border border-dashed border-blue-500/30 text-center mb-4">
-            <p className="text-[10px] text-blue-400/70 font-bold uppercase tracking-widest mb-1">Your VIP Promo Code</p>
-            <p className="text-3xl font-black text-blue-300 tracking-widest mb-2">
-              {profile?.refer_code || '---'}
-            </p>
-            <button
-              onClick={() => handleCopy(profile?.refer_code || '')}
-              className="text-xs text-blue-400 border border-blue-500/30 px-3 py-1 rounded-full hover:bg-blue-900/30 transition-all"
-            >
-              {copied ? '✅ Copied!' : 'Copy Code'}
-            </button>
-          </div>
-
-          {/* Pitch Box */}
-          <div className="bg-[#070a08] rounded-xl p-3.5 border-l-4 border-[#00ff88] text-xs text-gray-300 leading-relaxed">
-            💡 <strong className="text-white">Pitch karo:</strong>{' '}
-            <em>"Yaar, English Course ₹999 ka hai par mera code laga toh seedha ₹499 mein milega — ₹500 bachega!
-            Mera code hai <strong className="text-[#00ff88]">{profile?.refer_code || 'XXXXXX'}</strong>"</em>
-          </div>
         </div>
 
-        {/* ── Links Forms ── */}
-        <div className="grid sm:grid-cols-2 gap-4">
-
-          {/* App Links */}
-          <div className="bg-[#0d1410] border border-gray-800 rounded-2xl p-5 flex flex-col">
-            <h2 className="font-black text-white mb-4 flex items-center gap-2 text-sm">
-              <Edit2 className="w-4 h-4 text-[#00ff88]" /> App Refer Links
-            </h2>
-            <div className="space-y-2.5 flex-grow">
-              <AppInput placeholder="📈 Upstox Refer Link"
-                value={settings.app_links?.upstox}
-                onChange={e => setSettings({ ...settings, app_links: { ...settings.app_links, upstox: e.target.value } })} />
-              <AppInput placeholder="🏦 Navi Refer Link"
-                value={settings.app_links?.navi}
-                onChange={e => setSettings({ ...settings, app_links: { ...settings.app_links, navi: e.target.value } })} />
-              <AppInput placeholder="💳 PhonePe Refer Link"
-                value={settings.app_links?.phonepe}
-                onChange={e => setSettings({ ...settings, app_links: { ...settings.app_links, phonepe: e.target.value } })} />
-            </div>
-            <div className="mt-4 space-y-2">
-              <button
-                onClick={() => handleSaveSettings('App Links')}
-                className={`w-full text-xs font-black py-2.5 rounded-xl transition-all ${
-                  saveStatus.apps === 'saved' ? 'bg-[#00ff88]/10 text-[#00ff88] border border-[#00ff88]/30' :
-                  saveStatus.apps === 'error' ? 'bg-red-900/20 text-red-400 border border-red-500/30' :
-                  'bg-gray-800 hover:bg-gray-700 text-[#00ff88] border border-gray-700'
-                }`}
-              >
-                {saveStatus.apps === 'saving' ? '⏳ Saving...' :
-                 saveStatus.apps === 'saved' ? '✅ Saved!' :
-                 saveStatus.apps === 'error' ? '❌ Error' : 'Save Apps'}
-              </button>
-              <button onClick={handleSuggestApp}
-                className="w-full text-[11px] text-gray-600 hover:text-[#00ff88] flex items-center justify-center gap-1 transition-colors py-1">
-                <PlusCircle className="w-3 h-3" /> Suggest a new App
-              </button>
-            </div>
-          </div>
-
-          {/* Social Links */}
-          <div className="bg-[#0d1410] border border-gray-800 rounded-2xl p-5 flex flex-col">
-            <h2 className="font-black text-white mb-4 flex items-center gap-2 text-sm">
-              <Share2 className="w-4 h-4 text-pink-400" /> Social Media Links
-            </h2>
-            <div className="space-y-2.5 flex-grow">
-              <AppInput placeholder="🎬 YouTube Link"
-                value={settings.youtube_link}
-                onChange={e => setSettings({ ...settings, youtube_link: e.target.value })} />
-              <AppInput placeholder="📸 Instagram Link"
-                value={settings.instagram_link}
-                onChange={e => setSettings({ ...settings, instagram_link: e.target.value })} />
-              <AppInput placeholder="✈️ Telegram Link"
-                value={settings.telegram_link}
-                onChange={e => setSettings({ ...settings, telegram_link: e.target.value })} />
-              <AppInput placeholder="💬 WhatsApp Link"
-                value={settings.whatsapp_link}
-                onChange={e => setSettings({ ...settings, whatsapp_link: e.target.value })} />
-            </div>
-            <div className="mt-4">
-              <button
-                onClick={() => handleSaveSettings('Social Links')}
-                className={`w-full text-xs font-black py-2.5 rounded-xl transition-all ${
-                  saveStatus.socials === 'saved' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/30' :
-                  saveStatus.socials === 'error' ? 'bg-red-900/20 text-red-400 border border-red-500/30' :
-                  'bg-gray-800 hover:bg-gray-700 text-pink-400 border border-gray-700'
-                }`}
-              >
-                {saveStatus.socials === 'saving' ? '⏳ Saving...' :
-                 saveStatus.socials === 'saved' ? '✅ Saved!' :
-                 saveStatus.socials === 'error' ? '❌ Error' : 'Save Socials'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Watch & Grow ── */}
+        {/* 🚀 NAYA DYNAMIC APP LINKS MANAGER */}
         <div className="bg-[#0d1410] border border-gray-800 rounded-2xl p-5">
-          <h2 className="font-black text-white mb-1 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-red-500" /> Watch & Grow
+          <h2 className="font-black text-white mb-4 flex items-center justify-between text-sm">
+            <span className="flex items-center gap-2"><Edit2 className="w-4 h-4 text-[#00ff88]" /> Add Earning Apps to Shop</span>
           </h2>
-          <p className="text-xs text-gray-500 mb-4">Daily videos dekho — ₹10,000/month kaise kamayein!</p>
-          <div className="bg-black rounded-xl overflow-hidden aspect-video border border-gray-800 mb-3">
-            <iframe
-              width="100%" height="100%"
-              src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
-              title="Tutorial" frameBorder="0" allowFullScreen
-            />
-          </div>
-          <a href="https://youtube.com/playlist?list=YOUR_PLAYLIST_ID" target="_blank" rel="noreferrer"
-            className="flex items-center justify-center gap-2 w-full text-xs sm:text-sm font-bold bg-red-600/10 border border-red-500/20 text-red-400 py-3 rounded-xl hover:bg-red-600/15 transition-colors">
-            ▶️ Watch Complete Masterclass Series
-          </a>
+          {/* Ye naya component saare apps load, add aur remove handle karega */}
+          <AppLinksManager /> 
         </div>
 
-        {/* ── Quick Links ── */}
-        <div className="bg-[#0d1410] border border-gray-800 rounded-2xl p-4">
-          <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-3">Quick Actions</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'View My Shop', href: userShopUrl, external: true, icon: <ExternalLink className="w-4 h-4" />, color: 'text-[#00ff88]' },
-              { label: 'Buy Course', to: '/checkout', icon: <BadgeCheck className="w-4 h-4" />, color: 'text-blue-400' },
-              { label: 'Course Area', to: '/course', icon: <TrendingUp className="w-4 h-4" />, color: 'text-purple-400' },
-              { label: 'Renew Shop', to: '/checkout?product=rent', icon: <Zap className="w-4 h-4" />, color: 'text-yellow-400' },
-            ].map((item, i) => (
-              item.external ? (
-                <a key={i} href={item.href} target="_blank" rel="noreferrer"
-                  className={`flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-xl px-3 py-2.5 ${item.color} hover:border-gray-600 transition-all text-sm font-semibold`}>
-                  {item.icon} {item.label}
+        {/* Dynamic Training Section */}
+        <div className="bg-gradient-to-br from-[#0d1410] to-[#0a0f0c] border border-blue-500/20 rounded-2xl p-5">
+          <h2 className="font-black text-white mb-1 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-400" /> Exclusive Training Zone
+          </h2>
+          <p className="text-xs text-gray-500 mb-5">In videos ko dekho aur apne business ko multiply karo.</p>
+          
+          <div className="space-y-3">
+            {trainingVideos.length > 0 ? (
+              trainingVideos.map((video) => (
+                <a key={video.id} href={video.youtube_link} target="_blank" rel="noreferrer" 
+                   className="flex items-center gap-3 p-3 bg-[#0a0f0a] border border-gray-800 hover:border-blue-500/40 rounded-xl transition-all group">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                    <PlayCircle className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-gray-200 group-hover:text-blue-400 transition-colors line-clamp-1">{video.title}</h3>
+                    <p className="text-[10px] text-gray-500">Watch full tutorial on YouTube</p>
+                  </div>
+                  <ArrowUpRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400" />
                 </a>
-              ) : (
-                <a key={i} href={item.to}
-                  className={`flex items-center gap-2 bg-gray-900/50 border border-gray-800 rounded-xl px-3 py-2.5 ${item.color} hover:border-gray-600 transition-all text-sm font-semibold`}>
-                  {item.icon} {item.label}
-                </a>
-              )
-            ))}
+              ))
+            ) : (
+              <div className="text-center py-6 bg-[#0a0f0a] rounded-xl border border-gray-800 border-dashed">
+                <p className="text-sm text-gray-500 font-semibold">Training videos coming soon...</p>
+              </div>
+            )}
           </div>
         </div>
 
