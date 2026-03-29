@@ -19,17 +19,32 @@ function App() {
   const [subdomain, setSubdomain] = useState(null);
 
   useEffect(() => {
-    const host = window.location.hostname; 
-    const parts = host.split('.');
-    
+    // 1. URL se Hostname nikalna
+  const hostname = window.location.hostname;
+  
+  // 2. Subdomain check karne ka SMART logic
+  let isSubdomain = false;
+  let subdomainName = "";
+
+  if (hostname.includes('localhost')) {
+    const parts = hostname.split('.');
+    if (parts.length >= 2 && parts[0] !== 'localhost') {
+      isSubdomain = true;
+      subdomainName = parts[0];
+    }
+  } 
+  // 🚨 NAYA FIX: Cloudflare ke default domain ko ignore karo
+  else if (hostname.includes('pages.dev')) {
+    isSubdomain = false; 
+  } 
+  // Production Logic (*.merikamai.in)
+  else {
+    const parts = hostname.split('.');
     if (parts.length >= 3 && parts[0] !== 'www') {
-      setSubdomain(parts[0]);
+      isSubdomain = true;
+      subdomainName = parts[0];
     }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('user')) {
-      setSubdomain(urlParams.get('user'));
-    }
+  }
   }, []);
 
   return (
@@ -44,6 +59,9 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/course" element={<CourseArea />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/privacy" element={<Legal />} />
+        <Route path="/terms" element={<Legal />} />
+        <Route path="/refund" element={<Legal />} />
       </Routes>
 
       <LiveEarningsTicker />
