@@ -10,6 +10,7 @@ import UserSite from './pages/UserSite';
 import Dashboard from './pages/Dashboard';
 import Checkout from './pages/Checkout';
 import CourseArea from './pages/CourseArea';
+import ShopSetup from './pages/ShopSetup';
 
 export default function App() {
   // 1. URL se Hostname nikalna (e.g., 'merikamai.in' ya 'demo.merikamai.in')
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="/privacy" element={<Legal />} />
         <Route path="/terms" element={<Legal />} />
         <Route path="/refund" element={<Legal />} />
+        <Route path="/setup-shop" element={<ShopSetup />} />
       </Routes>
 
       <LiveEarningsTicker />

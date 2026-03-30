@@ -58,10 +58,22 @@ export default function Dashboard() {
 
     const fetchDashboardData = async () => {
       try {
+        // Dashboard.jsx ke useEffect fetchDashboardData() function mein:
+
         // 1. Fetch User Profile
         const { data: userData } = await supabase.from('users').select('*').eq('id', user.id).single();
-        if (userData) setProfile(userData);
-
+        if (userData) {
+          // Agar subdomain nahi hai (dukan nahi bani) ya rent expire ho gaya hai
+          if (!userData.subdomain || new Date(userData.rent_valid_upto) < new Date()) {
+            navigate('/setup-shop'); // Sidha Setup Page par bhej do!
+            return;
+          }
+          setProfile(userData);
+        } else {
+           // Agar user DB mein nahi mila, toh bhi setup par bhejo
+           navigate('/setup-shop');
+           return;
+        }
         // 2. Fetch User Settings (Only Socials now, AppLinksManager handles apps)
         const { data: settingsData } = await supabase.from('user_settings').select('*').eq('user_id', user.id).single();
         if (settingsData) {
@@ -156,91 +168,7 @@ export default function Dashboard() {
   }
 
   // ─── GATE 2: Subdomain & WhatsApp Claim Screen ───
-  if (!profile?.subdomain) {
-    return (
-      <div className="min-h-screen bg-[#070a08] flex items-center justify-center p-4">
-        <div className="bg-[#0d1410] border border-[#00ff88]/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,255,136,0.1)] text-center">
-          <Globe className="w-12 h-12 text-[#00ff88] mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-white mb-2">Shop Setup Complete Karo</h2>
-          <p className="text-gray-400 text-sm mb-6">Apni dukan ka naam aur apna WhatsApp number daalein.</p>
-          
-          <div className="flex flex-col gap-4 mb-6 text-left">
-            <div>
-              <label className="text-xs font-bold text-gray-500 mb-1 block">Shop URL (No spaces)</label>
-              <div className="flex items-center bg-[#0a0f0a] border border-gray-700 rounded-xl overflow-hidden focus-within:border-[#00ff88]/50 transition-colors">
-                <input 
-                  type="text" 
-                  placeholder="e.g. rahul-offers" 
-                  value={claimName}
-                  onChange={(e) => setClaimName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  className="flex-1 bg-transparent px-4 py-3 text-white outline-none placeholder-gray-600 font-semibold"
-                />
-                <span className="text-gray-500 pr-4 font-medium text-sm select-none">.merikamai.in</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-gray-500 mb-1 block">WhatsApp Number</label>
-              <input 
-                type="number" 
-                placeholder="10 digit active number" 
-                value={whatsappNum}
-                onChange={(e) => setWhatsappNum(e.target.value)}
-                className="w-full bg-[#0a0f0a] border border-gray-700 rounded-xl px-4 py-3 text-white outline-none focus:border-[#00ff88]/50 font-semibold placeholder-gray-600"
-              />
-            </div>
-
-            {claimStatus === 'taken' && <p className="text-red-400 text-xs font-bold text-center">❌ Yeh naam pehle se kisi ne liya hua hai.</p>}
-            {claimStatus === 'error' && <p className="text-red-400 text-xs font-bold text-center">❌ Server error, please try again.</p>}
-          </div>
-
-          <button 
-            onClick={handleClaimSubdomain}
-            disabled={!claimName || !whatsappNum || claimStatus === 'checking'}
-            className="w-full bg-[#00ff88] text-[#0a0a0a] font-black py-3.5 rounded-xl hover:bg-white transition-all shadow-[0_0_20px_rgba(0,255,136,0.2)] disabled:opacity-50"
-          >
-            {claimStatus === 'checking' ? 'Processing...' : 'Save & Continue'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── GATE 3: Paywall (Lock) Screen (₹21) ───
-  const isLocked = !profile?.rent_valid_upto || new Date(profile.rent_valid_upto) < new Date();
-  if (isLocked) {
-    return (
-      <div className="min-h-screen bg-[#070a08] flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#00ff88]/10 blur-[100px] rounded-full pointer-events-none" />
-        
-        <div className="relative z-10 bg-gradient-to-b from-[#0d1a11] to-[#080d09] border border-[#00ff88]/30 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(0,255,136,0.15)] text-center">
-          <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Lock className="w-8 h-8 text-red-500" />
-          </div>
-          <h2 className="text-3xl font-black text-white mb-2">Shop is Locked</h2>
-          <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-            Tumhara URL <strong className="text-[#00ff88]">{profile.subdomain}.merikamai.in</strong> reserve ho gaya hai! <br/>
-            Apni dukan ko duniya ke liye live karne aur kamai shuru karne ke liye ₹21 server rent pay karein.
-          </p>
-          
-          <div className="bg-[#0a0f0a] border border-gray-800 rounded-xl p-4 flex justify-between items-center mb-6">
-            <span className="text-gray-400 text-sm font-semibold">1 Month Server Rent</span>
-            <span className="text-2xl font-black text-[#00ff88]">₹21</span>
-          </div>
-
-          <Link 
-            to="/checkout?product=rent"
-            className="flex items-center justify-center gap-2 w-full bg-[#00ff88] text-[#0a0a0a] font-black py-4 rounded-xl hover:bg-white transition-all shadow-[0_0_30px_rgba(0,255,136,0.3)] hover:scale-[1.02]"
-          >
-            <Unlock className="w-5 h-5" /> Pay ₹21 & Unlock Shop
-          </Link>
-          <p className="text-gray-600 text-xs mt-4 flex items-center justify-center gap-1">
-            <ShieldCheck className="w-4 h-4" /> 100% Secured by Razorpay
-          </p>
-        </div>
-      </div>
-    );
-  }
+  
 
   // ─── GATE 4: Full Dashboard ───
   const displayName = profile?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || 'User';
