@@ -147,7 +147,7 @@ export default function MainSales() {
 
   const faqs = [
     { q: 'Kya setup karne mein technical knowledge chahiye?', a: 'Bilkul nahi! Sirf Google se login karo, apna naam aur UPI dal do — 5 minute mein teri dukan live ho jaati hai.' },
-    { q: '₹9/month ke baad auto-debit hoga?', a: 'Nahi! Zero auto-debit. Jab chaho tab renew karo. Koi hidden charges nahi hain.' },
+    { q: '₹21/month ke baad auto-debit hoga?', a: 'Nahi! Zero auto-debit. Jab chaho tab renew karo. Koi hidden charges nahi hain.' },
     { q: 'Refer commission kab milta hai?', a: 'Jaise hi payment verify hoti hai — 24 ghante ke andar wallet mein ₹50 credit ho jaata hai.' },
     { q: 'Minimum withdrawal kitna hai?', a: '₹200 hone par directly apne UPI account mein withdraw kar sakte ho. No bank form, no delays.' },
     { q: 'Kya main multiple apps promote kar sakta hun?', a: 'Haan! Upstox, Navi, PhonePe — apni marzi se koi bhi app choose karo. Aur naye apps regularly add hote rehte hain.' },
@@ -160,7 +160,7 @@ export default function MainSales() {
       <div className="bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/20 to-[#00ff88]/10 border-b border-[#00ff88]/20 py-2 px-4 text-center">
         <p className="text-sm font-semibold text-[#00ff88] flex items-center justify-center gap-2">
           <Flame className="w-4 h-4 animate-pulse" />
-          🎉 Limited Offer: ₹9/month plan — Offer expires in&nbsp;
+          🎉 Limited Offer: ₹21/month plan — Offer expires in&nbsp;
           <span className="font-black tabular-nums bg-[#00ff88]/10 px-2 py-0.5 rounded border border-[#00ff88]/30">
             {pad(timeLeft.h)}:{pad(timeLeft.m)}:{pad(timeLeft.s)}
           </span>
@@ -197,7 +197,7 @@ export default function MainSales() {
 
         <p className="relative z-10 text-center text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
           Apni <strong className="text-white">khud ki Earning Website</strong> banao — bina coding ke, bina investment ke.
-          Sirf <strong className="text-[#00ff88]">₹9/month</strong> mein — aur pura commission <strong className="text-white">tumhara</strong>.
+          Sirf <strong className="text-[#00ff88]">₹21/month</strong> mein — aur pura commission <strong className="text-white">tumhara</strong>.
         </p>
 
         {/* CTA Buttons */}
@@ -208,7 +208,7 @@ export default function MainSales() {
             className="group flex items-center justify-center gap-3 bg-[#00ff88] text-[#0a0a0a] font-black text-lg px-8 py-4 rounded-2xl hover:bg-white transition-all duration-200 shadow-[0_0_30px_rgba(0,255,136,0.35)] hover:shadow-[0_0_50px_rgba(0,255,136,0.5)] hover:scale-105"
           >
             <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            Apni Dukan Shuru Karo — Free!
+            Apni Dukan Shuru Karo!
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           
@@ -341,7 +341,7 @@ export default function MainSales() {
             </p>
 
             <div className="flex items-end gap-2 mb-2">
-              <span className="text-5xl font-black text-[#00ff88]">₹9</span>
+              <span className="text-5xl font-black text-[#00ff88]">₹21</span>
               <div className="pb-1.5">
                 <p className="text-gray-400 text-sm font-medium">/ month</p>
                 <p className="text-gray-600 text-xs">No auto-debit. Ever.</p>
@@ -351,7 +351,7 @@ export default function MainSales() {
             <div className="bg-[#00ff88]/8 border border-[#00ff88]/20 rounded-xl p-3.5 mb-6 flex items-start gap-2.5">
               <ShieldCheck className="w-5 h-5 text-[#00ff88] shrink-0 mt-0.5" />
               <p className="text-sm text-[#00ff88]/90">
-                <strong>Zero Setup Cost.</strong> Sirf ₹9 server kiraya — teri apni dukan, teri apni kamai.
+                <strong>Zero Setup Cost.</strong> Sirf ₹21 server kiraya — teri apni dukan, teri apni kamai.
               </p>
             </div>
 
@@ -411,7 +411,7 @@ export default function MainSales() {
         <div className="bg-gradient-to-r from-[#0a1f12] via-[#0d1a14] to-[#0a1f12] border border-[#00ff88]/20 rounded-3xl p-8 sm:p-12">
           <div className="text-center mb-10">
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-3">
-              Sirf ₹9 Mein Kya Milta Hai?
+              Sirf ₹21 Mein Kya Milta Hai?
             </h2>
             <p className="text-gray-400">Isko dekh fir soch — kya isse better deal ho sakti hai?</p>
           </div>
@@ -460,7 +460,7 @@ export default function MainSales() {
               <span className="text-[#00ff88]">Shuru Karo.</span>
             </h2>
             <p className="text-gray-400 mb-8 text-lg">
-              Ek click mein apni earning website live. Zero risk. Sirf ₹9.
+              Ek click mein apni earning website live. Zero risk. Sirf ₹21.
             </p>
             {/* ✅ FIXED ROUTING LINK */}
             <Link
