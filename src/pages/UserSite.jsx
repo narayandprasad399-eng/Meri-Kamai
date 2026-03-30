@@ -401,8 +401,9 @@ function TestimonialTicker() {
 /* ─────────────────────────────────────────────
    MAIN COMPONENT
 ───────────────────────────────────────────── */
-export default function UserSite() {
-  const { subdomain } = useParams();
+export default function UserSite({ customSubdomain }) {
+  const { subdomain: paramSubdomain } = useParams();
+  const subdomain = customSubdomain || paramSubdomain;
   const [loading, setLoading] = useState(true);
   const [shopOwner, setShopOwner] = useState(null);
   const [socialLinks, setSocialLinks] = useState(null);
