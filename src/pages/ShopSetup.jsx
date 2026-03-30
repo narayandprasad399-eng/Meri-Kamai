@@ -170,12 +170,17 @@ export default function ShopSetup() {
       });
       const result = await verifyRes.json();
 
-      if (!result.success) throw new Error(result.error || "Verification failed");
+      // 🚀 NAYA FIX: Ab yahan exact Database Error pakda jayega!
+      if (!result.success) {
+        console.error("🔥 FULL ERROR FROM WORKER:", result);
+        throw new Error(result.detail || result.error || "Verification failed");
+      }
 
       setShopData(result);
       setStep('success');
     } catch (err) {
-      setError("Payment verify nahi hua: " + err.message + " — Support se contact karo.");
+      // Yeh line ab asli Supabase ka error screen par dikhayegi
+      setError("❌ DB ERROR: " + err.message);
       setStep('setup');
     }
   };
