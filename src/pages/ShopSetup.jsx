@@ -9,7 +9,6 @@ import {
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL;
 const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
-const [hasCourse, setHasCourse] = useState(false);
 
 // Load Razorpay script
 function loadRazorpay() {
@@ -27,6 +26,8 @@ export default function ShopSetup() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // 🚀 BUG FIXED: hasCourse hook ab sahi jagah (component ke andar) hai
+  const [hasCourse, setHasCourse] = useState(false);
   const [step, setStep] = useState('checking'); // checking | setup | paying | success | renew
   const [shopName, setShopName] = useState('');
   const [customSubdomain, setCustomSubdomain] = useState('');
@@ -45,7 +46,6 @@ export default function ShopSetup() {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
      
-
       const res = await fetch(`${WORKER_URL}/api/check-shop`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -385,7 +385,7 @@ export default function ShopSetup() {
               </div>
             </div>
 
-            {/* 🔥 Naya: Shop URL Input */}
+            {/* Shop URL Input */}
             <div>
               <label className="text-[10px] text-gray-600 font-bold uppercase tracking-wider block mb-1.5">
                 Aapki Dukan Ka URL
@@ -452,6 +452,8 @@ export default function ShopSetup() {
           Already have a shop?
           <button onClick={() => navigate('/dashboard')} className="text-gray-600 hover:text-[#00ff88] transition-colors ml-1">Go to Dashboard →</button>
         </p>
+
+        {/* Course Buyers Bypass CTA */}
         {hasCourse && (
            <div className="mt-4 text-center border-t border-gray-800 pt-4">
              <p className="text-xs text-gray-500 mb-2">You already own the English Course!</p>
