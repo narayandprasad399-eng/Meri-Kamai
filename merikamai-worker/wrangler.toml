@@ -1,0 +1,19 @@
+name = "merikamai-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables (secrets wrangler se set karenge)
+# wrangler secret put YOUTUBE_API_KEY
+# wrangler secret put RAZORPAY_KEY_ID
+# wrangler secret put RAZORPAY_KEY_SECRET
+# wrangler secret put SUPABASE_URL
+# wrangler secret put SUPABASE_SERVICE_KEY
+
+[vars]
+ALLOWED_ORIGIN = "https://merikamai.in"
+
+# KV Storage for caching YouTube results
+[[kv_namespaces]]
+binding = "CACHE"
+id = "e406367ef11d443485b4ef6dd48e96ec"
+preview_id = "7c327c7977fe4dd0a51cbdd8fb0b93bc"
