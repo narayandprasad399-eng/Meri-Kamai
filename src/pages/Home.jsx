@@ -31,67 +31,106 @@ export default function Home() {
         </button>
       </nav>
 
-      {/* Hero */}
+      {/* Hero Section - UPDATED FOR GD & ADSTERRA APPROVAL */}
       <section style={{
         padding: '140px 24px 80px',
         textAlign: 'center',
         background: 'radial-gradient(circle at 50% 30%, rgba(255,107,0,0.12) 0%, transparent 60%)',
       }}>
-        <div style={{
-          display: 'inline-block',
-          background: 'rgba(0,212,255,0.1)',
-          border: '1px solid rgba(0,212,255,0.3)',
-          color: '#00d4ff',
-          padding: '5px 16px',
-          borderRadius: '20px',
-          fontSize: '12px',
-          fontWeight: 700,
-          letterSpacing: '2px',
-          marginBottom: '20px',
-        }}>
-          🚀 FREE PLATFORM
-        </div>
-
-        <h1 style={{
-          fontFamily: 'Teko',
-          fontSize: 'clamp(40px, 8vw, 70px)',
-          lineHeight: 1.05,
-          marginBottom: '16px',
-          color: '#f0f0ff',
-        }}>
-          APNI WEBSITE BANAO<br />
-          <span style={{
-            background: 'linear-gradient(135deg, #ff6b00, #ff9500)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          
+          {/* Premium Badge */}
+          <div style={{
+            display: 'inline-block',
+            background: 'rgba(255,107,0,0.1)',
+            color: '#ff6b00',
+            padding: '6px 18px',
+            borderRadius: '50px',
+            fontSize: '13px',
+            fontWeight: 800,
+            letterSpacing: '1px',
+            marginBottom: '25px',
+            border: '1px solid rgba(255,107,0,0.3)',
           }}>
-            BILKUL FREE MEIN
-          </span>
-        </h1>
+            🚀 INDIA'S #1 PORTAL BUILDER
+          </div>
 
-        <p style={{
-          fontSize: '17px',
-          color: '#9090b0',
-          maxWidth: '400px',
-          margin: '0 auto 36px',
-          lineHeight: 1.6,
-        }}>
-          Games, Reels aur English Course — sab ek jagah.
-          Share karo, traffic lao, paisa kamao!
-        </p>
+          {/* Safe & Professional Headline */}
+          <h1 style={{
+            fontFamily: 'Teko',
+            fontSize: 'clamp(45px, 8vw, 80px)',
+            lineHeight: 1.05,
+            marginBottom: '20px',
+            color: '#f0f0ff',
+          }}>
+            LAUNCH YOUR OWN <span style={{ color: '#ff6b00' }}>GAMING & REELS</span> PORTAL
+          </h1>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-          <button
-            onClick={handleSignup}
-            disabled={loading}
-            className="btn-main"
-            style={{ fontSize: '20px', padding: '14px 40px' }}
-          >
-            {loading ? 'Loading...' : '🎮 Abhi Shuru Karo — Free!'}
-          </button>
-          <a href="/demo" style={{ color: '#606080', fontSize: '14px', textDecoration: 'none' }}>
-            Pehle dekho → demo portal
-          </a>
+          {/* Professional Sub-headline */}
+          <p style={{
+            fontSize: '18px',
+            color: '#9090b0',
+            maxWidth: '700px',
+            margin: '0 auto 40px',
+            lineHeight: 1.6,
+          }}>
+            Give your audience a world-class entertainment experience. Play 1000+ Premium HTML5 Games, swipe viral Shorts, and sell courses. Pre-integrated and ready to launch in 2 minutes.
+          </p>
+
+          {/* CTA Buttons - DEMO Highlighted */}
+          <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '60px' }}>
+            
+            {/* BIG GLOWING DEMO BUTTON - For GD Reviewers */}
+            <a href="/demo" style={{
+              padding: '16px 40px',
+              background: 'linear-gradient(45deg, #ff3366, #ff6b00)',
+              color: '#fff',
+              textDecoration: 'none',
+              borderRadius: '50px',
+              fontSize: '20px',
+              fontWeight: 800,
+              boxShadow: '0 10px 30px rgba(255,107,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}>
+              🎮 PLAY LIVE DEMO
+            </a>
+
+            {/* User Signup Button */}
+            <button
+              onClick={handleSignup}
+              disabled={loading}
+              style={{
+                padding: '16px 40px',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                border: '2px solid rgba(255,255,255,0.2)',
+                borderRadius: '50px',
+                fontSize: '18px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}
+            >
+              {loading ? 'Loading...' : '⚡ Create Free Account'}
+            </button>
+          </div>
+
+          {/* YouTube Explainer Video Section */}
+          <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', background: '#000' }}>
+            {/* Yahan 'YOUR_VIDEO_ID' ki jagah apne YouTube video ki 11-digit ID daal dena */}
+            <iframe
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              src="https://www.youtube.com/embed/YOUR_VIDEO_ID?rel=0&modestbranding=1"
+              title="Meri Kamai Platform Overview"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen>
+            </iframe>
+          </div>
         </div>
       </section>
 
@@ -175,7 +214,7 @@ export default function Home() {
           { step: '01', title: 'Sign Up Karo', desc: 'Google se login karo. Apna username choose karo.' },
           { step: '02', title: 'Portal Ready!', desc: 'merikamai.in/tumhara-naam — tera portal ready!' },
           { step: '03', title: 'Share Karo', desc: 'WhatsApp, Instagram pe share karo. Traffic lao!' },
-          { step: '04', title: 'Paisa Kamao', desc: 'Jab 2K daily traffic aaye — ₹299/month pe upgrade karo!' },
+          { step: '04', title: 'Monetize Portal', desc: 'Jab traffic aane lage, ₹299/mo me PRO upgrade karein aur apne Ads lagayein!' }
         ].map((s, i) => (
           <div key={i} style={{
             display: 'flex',
@@ -269,7 +308,7 @@ export default function Home() {
             <div style={{ fontFamily: 'Teko', fontSize: '52px', lineHeight: 1, marginBottom: '20px' }}>
               ₹299<span style={{ fontSize: '18px', color: '#9090b0' }}>/month</span>
             </div>
-            {['Apna GD account', '100% ad revenue apna', 'Subdomain + custom name', 'Priority support'].map(f => (
+            {['Custom GD Integration', 'Direct Ad Network (100% Revenue)', 'Subdomain + custom name', 'Priority support'].map(f => (
               <div key={f} style={{ display: 'flex', gap: '8px', marginBottom: '10px', color: '#d0d0e8', fontSize: '15px' }}>
                 <span>🔥</span> {f}
               </div>
@@ -298,18 +337,27 @@ export default function Home() {
         </button>
       </section>
 
-      {/* Footer */}
+      {/* Cleaned & Merged Footer */}
       <footer style={{
-        padding: '24px',
+        padding: '40px 24px',
         borderTop: '1px solid var(--border)',
         textAlign: 'center',
-        color: '#404060',
-        fontSize: '13px',
+        background: 'var(--bg-alt)'
       }}>
-        <div style={{ fontFamily: 'Orbitron', fontSize: '16px', fontWeight: 900, color: '#f0f0ff', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginBottom: '20px' }}>
+          <a href="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '14px' }}>Privacy Policy</a>
+          <a href="/terms" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '14px' }}>Terms & Conditions</a>
+          <a href="/refund" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '14px' }}>Refund Policy</a>
+          <a href="/contact" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', fontSize: '14px' }}>Contact Us</a>
+        </div>
+        
+        <div style={{ fontFamily: 'Orbitron', fontSize: '18px', fontWeight: 900, color: '#f0f0ff', marginBottom: '10px' }}>
           MERI<span style={{ color: '#ff6b00' }}>KAMAI</span>
         </div>
-        © 2026 MeriKamai. Khelo. Haso. Seekho.
+        
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', margin: 0 }}>
+          © {new Date().getFullYear()} MeriKamai. Khelo. Haso. Seekho. All rights reserved.
+        </p>
       </footer>
     </div>
   )
