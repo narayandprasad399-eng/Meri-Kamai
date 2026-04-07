@@ -45,7 +45,7 @@ export default function Portal() {
       <InstallBanner />
       <div style={{ minHeight: 'calc(100vh - var(--tab-h) - 57px)' }}>
         {activeTab === 'games' && <GamesTab selectedGames={portal?.selected_games} portalSlug={portal?.slug} />}
-        {activeTab === 'reels' && <ReelsTab />}
+        {activeTab === 'reels' && <ReelsTab portalSlug={portal?.slug} />}
         {activeTab === 'english' && <CourseArea />}
       </div>
       <BottomTabs active={activeTab} onChange={setActiveTab} />
