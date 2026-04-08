@@ -7,8 +7,7 @@ import Privacy from './pages/Legal/Privacy';
 import Terms from './pages/Legal/Terms';
 import Refund from './pages/Legal/Refund';
 import Contact from './pages/Legal/Contact';
-import Games from './pages/Games';
-import PlayGame from './pages/PlayGame';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -20,8 +19,7 @@ export default function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/refund" element={<Refund />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/games" element={<Games />} />
-        <Route path="/play/:gameId" element={<PlayGame />} />
+       
       </Routes>
     </BrowserRouter>
   )

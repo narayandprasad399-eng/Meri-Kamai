@@ -1630,17 +1630,9 @@ function handleWin(winnerId) {
     if (nextLv <= maxLv) {
       priBtn.textContent = 'Next Level →';
       priBtn.onclick = () => {
-        hide('winModal');
-        gameState.levelsPlayedSincAd++;
-        if (gameState.levelsPlayedSincAd >= 2) {
-          gameState.levelsPlayedSincAd = 0;
-          showAd(5, '🎮 LOADING NEXT LEVEL', 'Enjoy this quick ad while next level loads', () => {
-            startGame(gameState.mode, nextLv);
-          });
-        } else {
-          startGame(gameState.mode, nextLv);
-        }
-      };
+      hide('winModal');
+      startGame(gameState.mode, nextLv); // मक्खन की तरह अगला लेवल
+    };
     } else {
       priBtn.textContent = 'Mode Select';
       priBtn.onclick = () => { hide('winModal'); selectMode(gameState.mode); };
@@ -1710,5 +1702,10 @@ function init() {
 
 init();
 </script>
+<div style="position: fixed; bottom: 0; left: 0; width: 100%; height: 50px; display: flex; justify-content: center; background: #0a0a0c; z-index: 9999; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.1);">
+  <span style="position: absolute; left: 10px; top: 2px; font-size: 9px; color: rgba(255,255,255,0.3);">AD</span>
+  <div id="container-673333848ed16f2e00c502225c992db9"></div>
+</div>
+<script async="async" data-cfasync="false" src="https://pl29099674.profitablecpmratenetwork.com/673333848ed16f2e00c502225c992db9/invoke.js"></script>
 </body>
 </html>
