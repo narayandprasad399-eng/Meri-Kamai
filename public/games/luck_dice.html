@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ludo Neon Rush - Pro Edition</title>
+    <style>
+        :root {
+            --bg: #0b0c10;
+            --surface: #1f2833;
+            --primary: #66fcf1;
+            --secondary: #45a29e;
+            --accent: #c5a3ff;
+            --danger: #ff0055;
+            --text: #ffffff;
+            --board-size: 300px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+
+        body {
+            background-color: var(--bg); color: var(--text); overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;
+        }
+
+        /* UI Screens */
+        .screen { display: none; width: 100%; max-width: 450px; height: 100%; padding: 20px; flex-direction: column; align-items: center; justify-content: center; position: absolute; background: var(--bg); }
+        .screen.active { display: flex; animation: fadeIn 0.5s ease-in-out; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* Typography & Buttons */
+        h1 { font-size: 2.5rem; text-transform: uppercase; color: var(--primary); text-shadow: 0 0 10px var(--primary); margin-bottom: 10px; text-align: center;}
+        h2 { font-size: 1.5rem; color: var(--accent); margin-bottom: 20px; }
+        
+        button {
+            background: transparent; border: 2px solid var(--primary); color: var(--primary);
+            padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 8px;
+            cursor: pointer; margin: 10px; transition: 0.3s; width: 80%; text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
+        }
+        button:hover, button:active { background: var(--primary); color: var(--bg); box-shadow: 0 0 20px var(--primary); }
+        button.btn-danger { border-color: var(--danger); color: var(--danger); box-shadow: 0 0 10px rgba(255, 0, 85, 0.2); }
+        button.btn-danger:hover { background: var(--danger); color: white; box-shadow: 0 0 20px var(--danger); }
+        button.btn-ad { background: linear-gradient(45deg, #ff9900, #ff5500); border: none; color: white; animation: pulse 1.5s infinite; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 20px #ff9900; } 100% { transform: scale(1); } }
+
+        /* Top Bar */
+        .top-bar { width: 100%; display: flex; justify-content: space-between; padding: 10px; background: var(--surface); border-radius: 10px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .stats { font-size: 1rem; font-weight: bold; color: var(--secondary); }
+        .stats span { color: white; }
+
+        /* Level Selector */
+        .level-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-height: 300px; overflow-y: auto; padding: 10px; }
+        .level-box { background: var(--surface); padding: 15px 0; text-align: center; border-radius: 5px; cursor: pointer; border: 1px solid var(--secondary); }
+        .level-box.locked { opacity: 0.5; pointer-events: none; border-color: #333; }
+
+        /* Game Board (Simplified Ludo Track) */
+        .board-container { position: relative; width: var(--board-size); height: var(--board-size); background: var(--surface); border-radius: 50%; border: 5px solid var(--primary); box-shadow: 0 0 30px rgba(102, 252, 241, 0.2); margin-bottom: 30px; display: flex; justify-content: center; align-items: center; }
+        .center-home { width: 60px; height: 60px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 20px var(--primary); position: absolute; z-index: 10; display:flex; align-items:center; justify-content:center; color: #000; font-weight:bold;}
+        
+        .token { width: 25px; height: 25px; border-radius: 50%; position: absolute; transition: all 0.5s ease-in-out; z-index: 20; box-shadow: 0 0 10px currentColor; }
+        .token.player { background: #00e5ff; border: 2px solid white; color: #00e5ff; }
+        .token.bot { background: #ff0055; border: 2px solid white; color: #ff0055; }
+
+        /* Dice */
+        .dice-container { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .dice { width: 60px; height: 60px; background: white; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 2rem; font-weight: bold; color: black; cursor: pointer; box-shadow: 0 5px 15px rgba(255,255,255,0.3); transition: transform 0.2s; }
+        .dice.rolling { animation: shake 0.5s; pointer-events: none; }
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(20deg); } 50% { transform: rotate(-20deg); } 75% { transform: rotate(20deg); } 100% { transform: rotate(0deg); } }
+
+        /* Action Buttons Game Screen */
+        .game-actions { display: flex; justify-content: space-between; width: 100%; margin-top: 15px; }
+        .game-actions button { width: 45%; margin: 0; padding: 10px; font-size: 0.9rem; }
+
+        /* Ad Modal */
+        .ad-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .ad-modal h2 { color: white; margin-bottom: 10px; }
+        .ad-timer { font-size: 3rem; color: var(--danger); margin: 20px 0; font-weight: bold; text-shadow: 0 0 20px var(--danger); }
+
+        /* Helpers */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Audio Element -->
+    <audio id="bg-music" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Main Menu -->
+    <div id="screen-menu" class="screen active">
+        <h1>Ludo Neon</h1>
+        <p style="margin-bottom: 30px; color: var(--secondary);">Infinite Rush</p>
+        <button onclick="showModeSelection()">Play Now</button>
+        <button onclick="alert('Points: ' + localStorage.getItem('ludo_points'))">My Points</button>
+    </div>
+
+    <!-- Mode Selection -->
+    <div id="screen-modes" class="screen">
+        <h2>Select Mode</h2>
+        <button onclick="loadLevels('Easy')">Easy (Casual)</button>
+        <button onclick="loadLevels('Medium')">Medium (Engaging)</button>
+        <button onclick="loadLevels('Hard')">Hard (Tactical)</button>
+        <button class="btn-danger" onclick="loadLevels('Pro')">Pro (Insane)</button>
+        <button class="btn-danger" style="margin-top: 30px;" onclick="switchScreen('screen-menu')">Back</button>
+    </div>
+
+    <!-- Level Selection -->
+    <div id="screen-levels" class="screen">
+        <h2 id="mode-title">Levels</h2>
+        <div class="level-grid" id="level-container">
+            <!-- Dynamically injected -->
+        </div>
+        <button class="btn-danger" style="margin-top: 20px;" onclick="switchScreen('screen-modes')">Back</button>
+    </div>
+
+    <!-- Gameplay Screen -->
+    <div id="screen-game" class="screen">
+        <div class="top-bar">
+            <div class="stats">Level: <span id="ui-level">1</span></div>
+            <div class="stats">Mode: <span id="ui-mode">Easy</span></div>
+            <div class="stats">Points: <span id="ui-points">0</span></div>
+        </div>
+
+        <div class="board-container">
+            <div class="center-home">WIN</div>
+            <div id="player-token" class="token player"></div>
+            <div id="bot-token" class="token bot"></div>
+        </div>
+
+        <div class="dice-container">
+            <div id="status-text" style="color: var(--primary); font-weight: bold;">Your Turn!</div>
+            <div id="dice" class="dice" onclick="rollDice()">🎲</div>
+        </div>
+
+        <div class="game-actions">
+            <button onclick="requestUndo()" style="border-color: #ff9900; color: #ff9900;">Move Back (Ad)</button>
+            <button class="btn-danger" onclick="quitGame()">Quit</button>
+        </div>
+    </div>
+
+    <!-- Ad Overlay -->
+    <div id="ad-overlay" class="ad-modal">
+        <h2>Sponsor Message</h2>
+        <p>Please wait to continue...</p>
+        <div class="ad-timer" id="ad-timer">15</div>
+        <button id="ad-link-btn" class="btn-ad hidden" onclick="openAdsterraLink()">Click to Continue</button>
+        <button id="ad-skip-btn" class="btn-danger hidden" style="margin-top: 20px;" onclick="closeAd()">Resume Game</button>
+    </div>
+
+    <!-- Game Over / Win Overlay -->
+    <div id="result-overlay" class="ad-modal">
+        <h1 id="result-title">You Won!</h1>
+        <p id="result-desc">+100 Points added!</p>
+        <button id="next-level-btn" class="hidden" onclick="nextLevel()">Next Level</button>
+        <button id="retry-ad-btn" class="btn-ad hidden" onclick="retryWithAd()">Watch Ad to Retry (15s)</button>
+        <button onclick="quitGame()" style="margin-top: 10px;">Main Menu</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // ADSTERRA CONFIGURATION
+        // ==========================================
+        const ADSTERRA_SMART_LINK = "https://www.profitablecpmratenetwork.com/t518j6tp?key=c58490e857ec8dbcc9cebc1e1a12270d"; // CHANGE THIS LINK
+
+        // ==========================================
+        // GAME STATE
+        // ==========================================
+        let points = parseInt(localStorage.getItem('ludo_points')) || 0;
+        let unlockedLevel = parseInt(localStorage.getItem('ludo_level')) || 1;
+        let currentLevel = 1;
+        let currentMode = 'Easy';
+        let levelsPlayedSinceAd = 0;
+
+        let playerPos = 0;
+        let botPos = 0;
+        const totalSteps = 30; // Steps to reach center
+        let previousPlayerPos = 0; // For undo feature
+        let isPlayerTurn = true;
+        
+        let aiDifficultyMap = { 'Easy': 0.3, 'Medium': 0.5, 'Hard': 0.7, 'Pro': 0.9 }; // AI luck probability
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        function init() {
+            localStorage.setItem('ludo_points', points);
+            localStorage.setItem('ludo_level', unlockedLevel);
+        }
+        init();
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function playMusic() {
+            let bgm = document.getElementById('bg-music');
+            bgm.volume = 0.3;
+            bgm.play().catch(e => console.log("Audio autoplay blocked until interaction."));
+        }
+
+        // ==========================================
+        // LEVEL & MODE LOGIC
+        // ==========================================
+        function showModeSelection() {
+            playMusic();
+            switchScreen('screen-modes');
+        }
+
+        function loadLevels(mode) {
+            currentMode = mode;
+            document.getElementById('mode-title').innerText = mode + " Levels";
+            const container = document.getElementById('level-container');
+            container.innerHTML = '';
+
+            // Generate infinite feel (Show up to 200)
+            let totalShow = 200; 
+            for(let i=1; i<=totalShow; i++) {
+                let div = document.createElement('div');
+                div.className = `level-box ${i > unlockedLevel ? 'locked' : ''}`;
+                div.innerText = i;
+                if(i <= unlockedLevel) {
+                    div.onclick = () => startGame(i);
+                }
+                container.appendChild(div);
+            }
+            switchScreen('screen-levels');
+        }
+
+        // ==========================================
+        // CORE GAMEPLAY
+        // ==========================================
+        function startGame(level) {
+            currentLevel = level;
+            playerPos = 0;
+            botPos = 0;
+            isPlayerTurn = true;
+            document.getElementById('ui-level').innerText = level;
+            document.getElementById('ui-mode').innerText = currentMode;
+            document.getElementById('ui-points').innerText = points;
+            document.getElementById('dice').innerText = '🎲';
+            document.getElementById('status-text').innerText = "Your Turn!";
+            
+            updateTokens();
+            switchScreen('screen-game');
+        }
+
+        function getPositionCoordinates(step) {
+            // Circular mathematical path to simulate Ludo board
+            const radius = 120; // Board size / 2 roughly
+            if (step === 0) return { x: 0, y: radius }; // Start
+            if (step >= totalSteps) return { x: 0, y: 0 }; // Center (Win)
+
+            const angle = (step / totalSteps) * (Math.PI * 2 * 2); // 2 full circles
+            const currentRadius = radius - (step * (radius / totalSteps)); // Spiral inward
+            
+            return {
+                x: Math.cos(angle) * currentRadius,
+                y: Math.sin(angle) * currentRadius
+            };
+        }
+
+        function updateTokens() {
+            const pToken = document.getElementById('player-token');
+            const bToken = document.getElementById('bot-token');
+
+            let pCords = getPositionCoordinates(playerPos);
+            let bCords = getPositionCoordinates(botPos);
+
+            pToken.style.transform = `translate(${pCords.x}px, ${pCords.y}px)`;
+            bToken.style.transform = `translate(${bCords.x + 10}px, ${bCords.y - 10}px)`; // Offset bot slightly
+        }
+
+        function rollDice() {
+            if (!isPlayerTurn) return;
+            const diceEl = document.getElementById('dice');
+            diceEl.classList.add('rolling');
+            
+            setTimeout(() => {
+                diceEl.classList.remove('rolling');
+                let roll = Math.floor(Math.random() * 6) + 1;
+                diceEl.innerText = roll;
+                
+                previousPlayerPos = playerPos; // Save state for undo
+                playerPos += roll;
+                if (playerPos > totalSteps) playerPos = totalSteps;
+                
+                updateTokens();
+                checkWinCondition();
+
+                if (playerPos < totalSteps) {
+                    isPlayerTurn = false;
+                    document.getElementById('status-text').innerText = "Bot's Turn...";
+                    setTimeout(botTurn, 1000);
+                }
+            }, 500);
+        }
+
+        function botTurn() {
+            const diceEl = document.getElementById('dice');
+            diceEl.classList.add('rolling');
+            
+            setTimeout(() => {
+                diceEl.classList.remove('rolling');
+                // AI Logic based on difficulty
+                let aiLuck = aiDifficultyMap[currentMode];
+                let roll = Math.floor(Math.random() * 6) + 1;
+                
+                // Cheat a bit if high difficulty
+                if (Math.random() < aiLuck && roll < 4) roll += 2; 
+
+                diceEl.innerText = roll;
+                botPos += roll;
+                if (botPos > totalSteps) botPos = totalSteps;
+
+                updateTokens();
+                checkWinCondition();
+
+                if (botPos < totalSteps) {
+                    isPlayerTurn = true;
+                    document.getElementById('status-text').innerText = "Your Turn!";
+                }
+            }, 500);
+        }
+
+        function checkWinCondition() {
+            if (playerPos >= totalSteps) {
+                points += 100 * currentLevel;
+                if (currentLevel >= unlockedLevel) {
+                    unlockedLevel++;
+                }
+                init();
+                showResult(true);
+            } else if (botPos >= totalSteps) {
+                showResult(false);
+            }
+        }
+
+        function quitGame() {
+            document.getElementById('result-overlay').style.display = 'none';
+            switchScreen('screen-menu');
+        }
+
+        // ==========================================
+        // AD & MONETIZATION LOGIC (PSYCHOLOGICAL)
+        // ==========================================
+        let adCallback = null;
+        let adTimerInterval = null;
+
+        function showResult(isWin) {
+            const overlay = document.getElementById('result-overlay');
+            const title = document.getElementById('result-title');
+            const desc = document.getElementById('result-desc');
+            const nextBtn = document.getElementById('next-level-btn');
+            const retryBtn = document.getElementById('retry-ad-btn');
+
+            overlay.style.display = 'flex';
+            nextBtn.classList.add('hidden');
+            retryBtn.classList.add('hidden');
+
+            if (isWin) {
+                title.innerText = "Level Cleared! 🏆";
+                title.style.color = "var(--primary)";
+                desc.innerText = `+${100 * currentLevel} Points added!`;
+                nextBtn.classList.remove('hidden');
+                levelsPlayedSinceAd++;
+            } else {
+                title.innerText = "You Lost! 💀";
+                title.style.color = "var(--danger)";
+                desc.innerText = "Bot reached home first.";
+                retryBtn.classList.remove('hidden'); // Force 15s ad to continue
+            }
+        }
+
+        function nextLevel() {
+            document.getElementById('result-overlay').style.display = 'none';
+            // Trigger 5-second ad every 2 levels
+            if (levelsPlayedSinceAd >= 2) {
+                levelsPlayedSinceAd = 0;
+                triggerAd(5, () => startGame(currentLevel + 1));
+            } else {
+                startGame(currentLevel + 1);
+            }
+        }
+
+        function requestUndo() {
+            if (playerPos === 0 || previousPlayerPos === playerPos || !isPlayerTurn) {
+                alert("Cannot move back right now!");
+                return;
+            }
+            // 15 seconds ad for Move Back
+            triggerAd(15, () => {
+                playerPos = previousPlayerPos;
+                updateTokens();
+                alert("Move restored!");
+            });
+        }
+
+        function retryWithAd() {
+            document.getElementById('result-overlay').style.display = 'none';
+            // 15 seconds ad to revive/retry
+            triggerAd(15, () => startGame(currentLevel));
+        }
+
+        // The Fake "Smart Link" Overlay mechanism
+        function triggerAd(seconds, callback) {
+            adCallback = callback;
+            const overlay = document.getElementById('ad-overlay');
+            const timerEl = document.getElementById('ad-timer');
+            const linkBtn = document.getElementById('ad-link-btn');
+            const skipBtn = document.getElementById('ad-skip-btn');
+
+            overlay.style.display = 'flex';
+            linkBtn.classList.add('hidden');
+            skipBtn.classList.add('hidden');
+            
+            let timeLeft = seconds;
+            timerEl.innerText = timeLeft;
+
+            adTimerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                
+                // Show smart link button mid-way to force click interaction
+                if (timeLeft === Math.floor(seconds / 2)) {
+                    linkBtn.classList.remove('hidden');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(adTimerInterval);
+                    timerEl.innerText = "0";
+                    skipBtn.classList.remove('hidden');
+                }
+            }, 1000);
+        }
+
+        function openAdsterraLink() {
+            // Open user's adsterra link in new tab
+            window.open(ADSTERRA_SMART_LINK, '_blank');
+            // Hide the ad link button so they wait for timer
+            document.getElementById('ad-link-btn').classList.add('hidden');
+        }
+
+        function closeAd() {
+            document.getElementById('ad-overlay').style.display = 'none';
+            if (adCallback) {
+                adCallback();
+                adCallback = null;
+            }
+        }
+    </script>
+</body>
+</html>

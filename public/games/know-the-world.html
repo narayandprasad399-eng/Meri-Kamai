@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KNOW IT ALL</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a14;
+    --card: #12122a;
+    --accent1: #ff4faa;
+    --accent2: #4fffb4;
+    --accent3: #ffe04f;
+    --text: #f0f0ff;
+    --muted: #7b7b9e;
+    --glow1: rgba(255,79,170,0.35);
+    --glow2: rgba(79,255,180,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* -------- Animated BG -------- */
+  .bg-orbs {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  }
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.18;
+    animation: floatOrb 10s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 420px; height: 420px; background: var(--accent1); top: -100px; left: -80px; animation-delay: 0s; }
+  .orb2 { width: 340px; height: 340px; background: var(--accent2); bottom: -80px; right: -60px; animation-delay: -4s; }
+  .orb3 { width: 260px; height: 260px; background: var(--accent3); top: 40%; left: 45%; animation-delay: -7s; }
+
+  @keyframes floatOrb {
+    0%   { transform: translate(0,0) scale(1); }
+    100% { transform: translate(30px, 40px) scale(1.1); }
+  }
+
+  /* -------- Stars -------- */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .star {
+    position: absolute; width: 2px; height: 2px; border-radius: 50%;
+    background: white; animation: twinkle 3s infinite alternate;
+  }
+  @keyframes twinkle {
+    0%   { opacity: 0.2; transform: scale(1); }
+    100% { opacity: 1;   transform: scale(1.8); }
+  }
+
+  /* -------- Wrapper -------- */
+  #app {
+    position: relative; z-index: 1; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  /* -------- TOP BAR -------- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 22px;
+    background: rgba(10,10,20,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .topbar-logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+
+  /* Language toggle */
+  .lang-toggle {
+    display: flex; align-items: center; gap: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 30px; overflow: hidden;
+  }
+  .lang-btn {
+    padding: 6px 14px; font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--muted); transition: all 0.25s;
+    letter-spacing: 0.5px;
+  }
+  .lang-btn.active {
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    color: #0a0a14; border-radius: 30px;
+  }
+
+  /* Score chip */
+  .score-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 30px; padding: 6px 16px;
+    font-size: 0.82rem; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .score-chip .val { color: var(--accent3); font-family: 'Syne', sans-serif; font-size: 1rem; }
+
+  /* Streak badge */
+  .streak-badge {
+    background: linear-gradient(135deg, #ff6b35, #ff4faa);
+    border-radius: 30px; padding: 5px 12px;
+    font-size: 0.78rem; font-weight: 700;
+    display: none; align-items: center; gap: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .streak-badge.show { display: flex; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.07)} }
+
+  /* -------- SCREENS -------- */
+  .screen { width: 100%; max-width: 520px; text-align: center; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* -------- HOME SCREEN -------- */
+  .home-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.4rem, 8vw, 3.8rem);
+    font-weight: 800; line-height: 1.05;
+    margin-bottom: 10px;
+  }
+  .home-title .g1 {
+    background: linear-gradient(90deg, var(--accent1), #ff8c4f);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .home-title .g2 {
+    background: linear-gradient(90deg, var(--accent2), #4fb4ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .home-sub {
+    color: var(--muted); font-size: 0.95rem; margin-bottom: 40px;
+    line-height: 1.6;
+  }
+
+  .mode-cards { display: flex; flex-direction: column; gap: 18px; }
+  .mode-card {
+    position: relative; overflow: hidden;
+    background: var(--card);
+    border: 1.5px solid rgba(255,255,255,0.07);
+    border-radius: 22px; padding: 28px 28px;
+    cursor: pointer; text-align: left;
+    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+  }
+  .mode-card:hover { transform: translateY(-4px); }
+  .mode-card.world { --c1: #ff4faa; --c2: #ff8c4f; }
+  .mode-card.self  { --c1: #4fffb4; --c2: #4fb4ff; }
+  .mode-card:hover { border-color: var(--c1); box-shadow: 0 0 30px rgba(var(--c1-raw), 0.2); }
+  .mode-card.world:hover { box-shadow: 0 0 30px var(--glow1); }
+  .mode-card.self:hover  { box-shadow: 0 0 30px var(--glow2); }
+
+  .mode-card-bg {
+    position: absolute; right: -20px; top: -20px;
+    font-size: 100px; opacity: 0.07;
+    transition: transform 0.4s, opacity 0.3s;
+  }
+  .mode-card:hover .mode-card-bg { transform: scale(1.15) rotate(10deg); opacity: 0.14; }
+
+  .mode-card-icon {
+    font-size: 2.4rem; margin-bottom: 12px; display: block;
+  }
+  .mode-card h2 {
+    font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--c1), var(--c2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .mode-card p { color: var(--muted); font-size: 0.87rem; line-height: 1.5; }
+
+  .mode-card-arrow {
+    position: absolute; right: 22px; bottom: 26px;
+    font-size: 1.4rem; opacity: 0.4;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .mode-card:hover .mode-card-arrow { opacity: 1; transform: translateX(4px); }
+
+  /* -------- QUESTION SCREEN -------- */
+  .q-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 22px;
+  }
+  .q-mode-tag {
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 5px 14px; border-radius: 20px;
+  }
+  .tag-world { background: linear-gradient(90deg, #ff4faa22, #ff8c4f22); color: var(--accent1); border: 1px solid var(--accent1); }
+  .tag-self  { background: linear-gradient(90deg, #4fffb422, #4fb4ff22); color: var(--accent2); border: 1px solid var(--accent2); }
+
+  .q-count { color: var(--muted); font-size: 0.83rem; }
+
+  /* Progress bar */
+  .progress-bar {
+    width: 100%; height: 4px; background: rgba(255,255,255,0.07);
+    border-radius: 4px; margin-bottom: 24px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Question card */
+  .q-card {
+    background: var(--card);
+    border: 1.5px solid rgba(255,255,255,0.07);
+    border-radius: 24px; padding: 32px 28px 28px;
+    margin-bottom: 18px;
+    animation: cardIn 0.4s cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: scale(0.94) translateY(16px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .q-category {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+  }
+  .q-category::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent1); }
+
+  .q-text {
+    font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700;
+    line-height: 1.5; margin-bottom: 0;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 11px; margin-bottom: 20px; }
+
+  .opt-btn {
+    width: 100%; padding: 16px 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500;
+    cursor: pointer; text-align: left;
+    transition: all 0.2s; display: flex; align-items: center; gap: 12px;
+    position: relative; overflow: hidden;
+  }
+  .opt-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+    transform: translateX(4px);
+  }
+  .opt-btn .opt-letter {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08);
+    font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 800;
+    transition: all 0.2s;
+  }
+
+  .opt-btn.correct {
+    background: rgba(79,255,180,0.12); border-color: var(--accent2);
+    animation: correctPop 0.4s ease;
+  }
+  .opt-btn.correct .opt-letter { background: var(--accent2); color: #0a0a14; }
+  @keyframes correctPop {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.03) translateX(4px); }
+    100% { transform: scale(1) translateX(4px); }
+  }
+
+  .opt-btn.wrong {
+    background: rgba(255,79,79,0.1); border-color: #ff4f4f;
+    animation: wrongShake 0.4s ease;
+  }
+  .opt-btn.wrong .opt-letter { background: #ff4f4f; color: white; }
+  @keyframes wrongShake {
+    0%,100%  { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(6px); }
+    60%      { transform: translateX(-4px); }
+    80%      { transform: translateX(4px); }
+  }
+
+  .opt-btn.show-correct { border-color: var(--accent2); background: rgba(79,255,180,0.07); }
+
+  /* For psych questions - no options, just reflection */
+  .psych-reflection {
+    display: none; margin-top: 16px;
+    background: rgba(79,255,180,0.07);
+    border: 1px solid rgba(79,255,180,0.25);
+    border-radius: 14px; padding: 18px 20px;
+    color: var(--accent2); font-size: 0.88rem; line-height: 1.6;
+    animation: fadeUp 0.4s ease;
+  }
+
+  /* Next button */
+  .next-btn {
+    width: 100%; padding: 17px;
+    background: linear-gradient(135deg, var(--accent1), #ff8c4f);
+    border: none; border-radius: 14px;
+    color: #0a0a14; font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 800; cursor: pointer;
+    transition: all 0.25s; letter-spacing: 0.5px;
+    display: none;
+  }
+  .next-btn.show { display: block; animation: fadeUp 0.3s ease; }
+  .next-btn:hover { transform: scale(1.02); box-shadow: 0 8px 24px var(--glow1); }
+
+  .self-next-btn {
+    width: 100%; padding: 17px;
+    background: linear-gradient(135deg, var(--accent2), #4fb4ff);
+    border: none; border-radius: 14px;
+    color: #0a0a14; font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 800; cursor: pointer;
+    transition: all 0.25s; display: none;
+  }
+  .self-next-btn.show { display: block; animation: fadeUp 0.3s ease; }
+  .self-next-btn:hover { transform: scale(1.02); box-shadow: 0 8px 24px var(--glow2); }
+
+  /* Feedback toast */
+  .feedback-toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+    padding: 10px 22px; border-radius: 30px;
+    font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700;
+    z-index: 999; pointer-events: none; opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .feedback-toast.show { opacity: 1; }
+  .feedback-toast.correct { background: linear-gradient(90deg, #4fffb4, #4fb4ff); color: #0a0a14; }
+  .feedback-toast.wrong   { background: linear-gradient(90deg, #ff4f4f, #ff4faa); color: white; }
+
+  /* -------- AD SCREEN -------- */
+  .ad-screen {
+    width: 100%; max-width: 520px; text-align: center;
+    animation: fadeUp 0.5s ease;
+  }
+  .ad-label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 3px;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 16px;
+  }
+  .ad-box {
+    background: var(--card);
+    border: 1.5px solid rgba(255,255,255,0.07);
+    border-radius: 20px; padding: 28px;
+    margin-bottom: 20px;
+  }
+  .ad-box-inner {
+    width: 100%; min-height: 160px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px dashed rgba(255,255,255,0.08);
+    /* 👇 Replace this with actual Adsterra code */
+    font-size: 0.8rem; color: var(--muted);
+  }
+  .ad-countdown {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--accent1), var(--accent3));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .ad-countdown-sub { color: var(--muted); font-size: 0.85rem; }
+  .ad-skip-btn {
+    width: 100%; padding: 15px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    cursor: not-allowed; transition: all 0.2s; font-weight: 600;
+  }
+  .ad-skip-btn.ready {
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    color: #0a0a14; border: none; font-family: 'Syne', sans-serif; font-weight: 800;
+  }
+  .ad-skip-btn.ready:hover { transform: scale(1.02); }
+
+  /* -------- BACK BTN -------- */
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid rgba(255,255,255,0.1);
+    color: var(--muted); padding: 7px 14px; border-radius: 20px;
+    font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .back-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+
+  /* -------- FLOATING PARTICLES -------- */
+  .particle {
+    position: fixed; pointer-events: none; z-index: 999;
+    font-size: 1.4rem;
+    animation: particleFly 1.2s ease forwards;
+  }
+  @keyframes particleFly {
+    0%   { opacity: 1; transform: translate(0,0) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--dx), -100px) scale(0.4) rotate(var(--rot)); }
+  }
+
+  /* -------- RIPPLE -------- */
+  .ripple {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transform: scale(0); animation: rippleAnim 0.5s ease;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .q-card { padding: 22px 18px 18px; }
+    .q-text { font-size: 1.05rem; }
+    .opt-btn { padding: 14px 16px; font-size: 0.88rem; }
+  }
+
+  /* -------- BIG NUMBER FLASH -------- */
+  .big-flash {
+    position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+  }
+  .big-flash.show { animation: bigFlash 0.7s ease forwards; }
+  .big-flash-inner {
+    font-family: 'Syne', sans-serif; font-size: 5rem; font-weight: 800;
+  }
+  @keyframes bigFlash {
+    0%   { opacity: 0; transform: scale(0.5); }
+    30%  { opacity: 1; transform: scale(1.2); }
+    70%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.5); }
+  }
+</style>
+</head>
+<body>
+
+<!-- BG -->
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div class="stars" id="stars"></div>
+
+<!-- TOP BAR -->
+<div class="topbar" id="topbar">
+  <div class="topbar-logo">KNOW IT ALL ✦</div>
+  <div class="topbar-right">
+    <div class="streak-badge" id="streakBadge">🔥 <span id="streakNum">0</span></div>
+    <div class="score-chip">⚡ <span class="val" id="scoreDisplay">0</span></div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="btnHI" onclick="setLang('hi')">हि</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK TOAST -->
+<div class="feedback-toast" id="feedbackToast"></div>
+
+<!-- BIG FLASH -->
+<div class="big-flash" id="bigFlash">
+  <div class="big-flash-inner" id="bigFlashInner"></div>
+</div>
+
+<!-- APP -->
+<div id="app" style="padding-top: 80px;">
+
+  <!-- HOME SCREEN -->
+  <div class="screen" id="homeScreen">
+    <div class="home-title">
+      <span class="g1">Know</span><br>
+      <span class="g2">Everything.</span>
+    </div>
+    <p class="home-sub" id="homeSub">Test your world knowledge & discover yourself. Infinite questions. Zero boredom.</p>
+
+    <div class="mode-cards">
+      <div class="mode-card world" onclick="startMode('world')">
+        <div class="mode-card-bg">🌍</div>
+        <span class="mode-card-icon">🌍</span>
+        <h2 id="worldCardTitle">Know The World</h2>
+        <p id="worldCardDesc">Daily Current Affairs, GK, Science, Sports & more. How much do you actually know?</p>
+        <div class="mode-card-arrow">→</div>
+      </div>
+      <div class="mode-card self" onclick="startMode('self')">
+        <div class="mode-card-bg">🧠</div>
+        <span class="mode-card-icon">🧠</span>
+        <h2 id="selfCardTitle">Know Yourself</h2>
+        <p id="selfCardDesc">Deep psychological questions that reveal who you really are. Introspect & grow.</p>
+        <div class="mode-card-arrow">→</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTION SCREEN -->
+  <div class="screen" id="questionScreen" style="display:none;">
+    <div class="q-header">
+      <button class="back-btn" onclick="goHome()">← <span id="backLabel">Home</span></button>
+      <div class="q-count" id="qCountDisplay">Q 1</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+    <div class="q-card" id="questionCard">
+      <div class="q-category" id="qCategory">Loading...</div>
+      <div class="q-text" id="qText">Loading question...</div>
+    </div>
+
+    <div class="options" id="optionsContainer"></div>
+    <div class="psych-reflection" id="psychReflection"></div>
+
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next Question →</button>
+    <button class="self-next-btn" id="selfNextBtn" onclick="nextQuestion()">Explore Further →</button>
+  </div>
+
+  <!-- AD SCREEN -->
+  <div class="ad-screen" id="adScreen" style="display:none;">
+    <div class="ad-label" id="adLabel">Short Break</div>
+    <div class="ad-box">
+      <div class="ad-box-inner" id="adContainer">
+        <!-- 👇 PASTE YOUR ADSTERRA AD CODE HERE -->
+        <span>https://www.profitablecpmratenetwork.com/t518j6tp?key=c58490e857ec8dbcc9cebc1e1a12270d</span>
+      </div>
+    </div>
+    <div class="ad-countdown" id="adCountdown">3</div>
+    <div class="ad-countdown-sub" id="adCountdownSub">seconds remaining...</div>
+    <br>
+    <button class="ad-skip-btn" id="adSkipBtn" onclick="skipAd()">Please wait...</button>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+//  STARS
+// ============================================================
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 80; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.cssText = `
+    left:${Math.random()*100}%;
+    top:${Math.random()*100}%;
+    animation-delay:${Math.random()*4}s;
+    animation-duration:${2+Math.random()*3}s;
+    width:${Math.random()<0.3?3:2}px;
+    height:${Math.random()<0.3?3:2}px;
+    opacity:${0.2+Math.random()*0.5};
+  `;
+  starsEl.appendChild(s);
+}
+
+// ============================================================
+//  STATE
+// ============================================================
+let lang = 'en';
+let currentMode = null;
+let score = 0;
+let streak = 0;
+let qCount = 0;
+let qSinceAd = 0;
+let answered = false;
+let currentQ = null;
+let usedWorldIds = new Set();
+let usedSelfIds  = new Set();
+let adTimer = null;
+
+// ============================================================
+//  LANGUAGE STRINGS
+// ============================================================
+const T = {
+  en: {
+    homeSub: "Test your world knowledge & discover yourself. Infinite questions. Zero boredom.",
+    worldCardTitle: "Know The World",
+    worldCardDesc: "Daily Current Affairs, GK, Science, Sports & more. How much do you actually know?",
+    selfCardTitle: "Know Yourself",
+    selfCardDesc: "Deep psychological questions that reveal who you really are. Introspect & grow.",
+    backLabel: "Home",
+    adLabel: "Short Break",
+    adWait: "Please wait...",
+    adReady: "Continue Playing →",
+    adSub: "seconds remaining...",
+    correct: ["Brilliant! 🔥","Nailed it! ⚡","Genius! 🧠","Perfect! ✨","Wow! 💥"],
+    wrong: ["Not quite! 😅","Oops! 🤔","Try harder! 💪","Close but no! 😬","Wrong! 🧐"],
+    next: "Next Question →",
+    selfNext: "Explore Further →",
+    reveal: "Tap to Reveal Insight",
+    selfTagLabel: "PERSONALITY"
+  },
+  hi: {
+    homeSub: "दुनिया को परखो, खुद को पहचानो। अनगिनत सवाल। बोरियत ज़ीरो।",
+    worldCardTitle: "दुनिया जानो",
+    worldCardDesc: "रोज़ के करंट अफेयर्स, GK, Science, Sports और बहुत कुछ। कितना जानते हो?",
+    selfCardTitle: "खुद को जानो",
+    selfCardDesc: "ऐसे सवाल जो बता दें — असल में तुम कौन हो। सोचो, समझो, बढ़ो।",
+    backLabel: "होम",
+    adLabel: "थोड़ा रुको ✨",
+    adWait: "रुको ज़रा...",
+    adReady: "आगे खेलो →",
+    adSub: "सेकंड बाकी...",
+    correct: ["शानदार! 🔥","एकदम सही! ⚡","तेज़ दिमाग! 🧠","परफेक्ट! ✨","ज़बरदस्त! 💥"],
+    wrong: ["नहीं! 😅","गलत जवाब! 🤔","और सोचो! 💪","नहीं यार! 😬","उफ़! 🧐"],
+    next: "अगला सवाल →",
+    selfNext: "और जानो →",
+    reveal: "Insight देखो",
+    selfTagLabel: "व्यक्तित्व"
+  }
+};
+
+// ============================================================
+//  WORLD QUESTIONS (100+)
+// ============================================================
+const worldQuestions = [
+  // Science & Tech
+  {id:'w1',  cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"Which planet is known as the 'Red Planet'?",         q_hi:"किस ग्रह को 'लाल ग्रह' कहते हैं?",          opts_en:["Venus","Mars","Jupiter","Saturn"],  opts_hi:["शुक्र","मंगल","बृहस्पति","शनि"],  ans:1},
+  {id:'w2',  cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"What does 'AI' stand for?",                          q_hi:"'AI' का पूरा नाम क्या है?",                  opts_en:["Automated Input","Artificial Intelligence","Advanced Interface","Analog Integration"],  opts_hi:["ऑटोमेटेड इनपुट","आर्टिफिशियल इंटेलिजेंस","एडवांस्ड इंटरफ़ेस","एनालॉग इंटीग्रेशन"], ans:1},
+  {id:'w3',  cat_en:"Space",        cat_hi:"अंतरिक्ष",      q_en:"Which country launched the first satellite Sputnik?", q_hi:"पहला उपग्रह स्पुतनिक किस देश ने लॉन्च किया?", opts_en:["USA","China","Russia","India"],    opts_hi:["अमेरिका","चीन","रूस","भारत"],    ans:2},
+  {id:'w4',  cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"What is the chemical symbol for water?",             q_hi:"पानी का रासायनिक सूत्र क्या है?",            opts_en:["H2O","CO2","NaCl","O2"],          opts_hi:["H2O","CO2","NaCl","O2"],         ans:0},
+  {id:'w5',  cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"Who is the CEO of Tesla and SpaceX?",                q_hi:"Tesla और SpaceX के CEO कौन हैं?",             opts_en:["Jeff Bezos","Elon Musk","Tim Cook","Sundar Pichai"], opts_hi:["जेफ बेजोस","एलन मस्क","टिम कुक","सुंदर पिचाई"], ans:1},
+  {id:'w6',  cat_en:"Space",        cat_hi:"अंतरिक्ष",      q_en:"How many planets are in our Solar System?",          q_hi:"हमारे सौरमंडल में कितने ग्रह हैं?",          opts_en:["7","8","9","10"],                  opts_hi:["7","8","9","10"],                ans:1},
+  {id:'w7',  cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"What is the speed of light approximately?",          q_hi:"प्रकाश की गति लगभग कितनी है?",              opts_en:["3 lakh km/s","1 lakh km/s","5 lakh km/s","10 lakh km/s"], opts_hi:["3 लाख km/s","1 लाख km/s","5 लाख km/s","10 लाख km/s"], ans:0},
+  {id:'w8',  cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"Which company created ChatGPT?",                     q_hi:"ChatGPT किस कंपनी ने बनाया?",                opts_en:["Google","Meta","OpenAI","Microsoft"], opts_hi:["Google","Meta","OpenAI","Microsoft"], ans:2},
+  // India GK
+  {id:'w9',  cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"Who is known as the 'Father of the Indian Nation'?", q_hi:"'राष्ट्रपिता' किसे कहा जाता है?",           opts_en:["Nehru","Ambedkar","Gandhi","Patel"], opts_hi:["नेहरू","अंबेडकर","गांधी","पटेल"], ans:2},
+  {id:'w10', cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"What is the capital of India?",                      q_hi:"भारत की राजधानी क्या है?",                  opts_en:["Mumbai","Delhi","Chennai","Kolkata"], opts_hi:["मुंबई","दिल्ली","चेन्नई","कोलकाता"], ans:1},
+  {id:'w11', cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"ISRO successfully launched Chandrayaan-3 in which year?", q_hi:"ISRO ने चंद्रयान-3 किस साल लॉन्च किया?", opts_en:["2021","2022","2023","2024"], opts_hi:["2021","2022","2023","2024"], ans:2},
+  {id:'w12', cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"Which state is known as the 'Land of Five Rivers'?", q_hi:"'पांच नदियों की भूमि' किस राज्य को कहते हैं?", opts_en:["UP","Punjab","Rajasthan","Haryana"], opts_hi:["यूपी","पंजाब","राजस्थान","हरियाणा"], ans:1},
+  {id:'w13', cat_en:"History",      cat_hi:"इतिहास",        q_en:"In which year did India get independence?",          q_hi:"भारत को आज़ादी किस साल मिली?",             opts_en:["1945","1947","1950","1946"], opts_hi:["1945","1947","1950","1946"], ans:1},
+  {id:'w14', cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"Who wrote the Indian National Anthem 'Jana Gana Mana'?", q_hi:"'जन गण मन' किसने लिखा?", opts_en:["Bankim Chandra","Rabindranath Tagore","Sarojini Naidu","Subhash Bose"], opts_hi:["बंकिम चंद्र","रवींद्रनाथ टैगोर","सरोजिनी नायडू","सुभाष बोस"], ans:1},
+  {id:'w15', cat_en:"Sports",       cat_hi:"खेल",           q_en:"How many players are there in a cricket team?",      q_hi:"क्रिकेट टीम में कितने खिलाड़ी होते हैं?", opts_en:["9","10","11","12"], opts_hi:["9","10","11","12"], ans:2},
+  // World Affairs
+  {id:'w16', cat_en:"World Affairs", cat_hi:"विश्व",        q_en:"Which is the largest ocean on Earth?",               q_hi:"पृथ्वी का सबसे बड़ा महासागर कौन सा है?", opts_en:["Atlantic","Indian","Arctic","Pacific"], opts_hi:["अटलांटिक","हिंद","आर्कटिक","प्रशांत"], ans:3},
+  {id:'w17', cat_en:"World Affairs", cat_hi:"विश्व",        q_en:"Which country has the largest population in 2024?",  q_hi:"2024 में सबसे अधिक जनसंख्या किस देश की है?", opts_en:["China","USA","India","Indonesia"], opts_hi:["चीन","अमेरिका","भारत","इंडोनेशिया"], ans:2},
+  {id:'w18', cat_en:"World Affairs", cat_hi:"विश्व",        q_en:"Which country is known as the Land of the Rising Sun?", q_hi:"'उगते सूरज का देश' किसे कहा जाता है?", opts_en:["China","South Korea","Japan","Thailand"], opts_hi:["चीन","दक्षिण कोरिया","जापान","थाईलैंड"], ans:2},
+  {id:'w19', cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"What is the hardest natural substance on Earth?",    q_hi:"पृथ्वी पर सबसे कठोर प्राकृतिक पदार्थ कौन सा है?", opts_en:["Gold","Iron","Diamond","Platinum"], opts_hi:["सोना","लोहा","हीरा","प्लेटिनम"], ans:2},
+  {id:'w20', cat_en:"Biology",      cat_hi:"जीव विज्ञान",  q_en:"What is the powerhouse of the cell?",               q_hi:"कोशिका का 'पावरहाउस' क्या कहलाता है?", opts_en:["Nucleus","Mitochondria","Ribosome","Vacuole"], opts_hi:["केंद्रक","माइटोकॉन्ड्रिया","राइबोसोम","रिक्तिका"], ans:1},
+  {id:'w21', cat_en:"Sports",       cat_hi:"खेल",           q_en:"Who holds the record for most international cricket centuries?", q_hi:"अंतर्राष्ट्रीय क्रिकेट में सबसे ज़्यादा शतक किसके हैं?", opts_en:["Kohli","Tendulkar","Ponting","Jayawardene"], opts_hi:["कोहली","तेंदुलकर","पॉन्टिंग","जयवर्धने"], ans:1},
+  {id:'w22', cat_en:"Economy",      cat_hi:"अर्थव्यवस्था", q_en:"What does GDP stand for?",                          q_hi:"GDP का पूरा मतलब क्या है?", opts_en:["Gross Domestic Product","General Development Plan","Global Data Protocol","Government Direct Pay"], opts_hi:["सकल घरेलू उत्पाद","सामान्य विकास योजना","वैश्विक डेटा प्रोटोकॉल","सरकारी प्रत्यक्ष भुगतान"], ans:0},
+  {id:'w23', cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"What does HTTP stand for?",                         q_hi:"HTTP का पूरा नाम क्या है?", opts_en:["Hyper Text Transfer Protocol","High Tech Transfer Platform","Hyper Transfer Text Program","Home Tech Transfer Protocol"], opts_hi:["हाइपर टेक्स्ट ट्रांसफर प्रोटोकॉल","हाई टेक ट्रांसफर प्लेटफ़ॉर्म","हाइपर ट्रांसफर टेक्स्ट प्रोग्राम","होम टेक ट्रांसफर प्रोटोकॉल"], ans:0},
+  {id:'w24', cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"Which city is called the 'Silicon Valley of India'?", q_hi:"भारत की 'सिलिकॉन वैली' किस शहर को कहते हैं?", opts_en:["Delhi","Hyderabad","Bengaluru","Pune"], opts_hi:["दिल्ली","हैदराबाद","बेंगलुरु","पुणे"], ans:2},
+  {id:'w25', cat_en:"History",      cat_hi:"इतिहास",        q_en:"Who built the Taj Mahal?",                          q_hi:"ताजमहल किसने बनवाया था?", opts_en:["Akbar","Humayun","Shah Jahan","Aurangzeb"], opts_hi:["अकबर","हुमायूं","शाहजहाँ","औरंगज़ेब"], ans:2},
+  {id:'w26', cat_en:"Biology",      cat_hi:"जीव विज्ञान",  q_en:"How many bones are in the adult human body?",       q_hi:"वयस्क मानव शरीर में कितनी हड्डियाँ होती हैं?", opts_en:["196","206","216","226"], opts_hi:["196","206","216","226"], ans:1},
+  {id:'w27', cat_en:"World Affairs", cat_hi:"विश्व",        q_en:"Which country is both a continent and a country?",  q_hi:"कौन सा देश एक ही समय महाद्वीप भी है और देश भी?", opts_en:["New Zealand","Brazil","Australia","Canada"], opts_hi:["न्यूज़ीलैंड","ब्राज़ील","ऑस्ट्रेलिया","कनाडा"], ans:2},
+  {id:'w28', cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"What gas do plants absorb from the atmosphere?",    q_hi:"पौधे वायुमंडल से कौन सी गैस अवशोषित करते हैं?", opts_en:["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"], opts_hi:["ऑक्सीजन","नाइट्रोजन","कार्बन डाइऑक्साइड","हाइड्रोजन"], ans:2},
+  {id:'w29', cat_en:"Sports",       cat_hi:"खेल",           q_en:"Which country has won the most FIFA World Cups?",   q_hi:"सबसे ज़्यादा FIFA World Cup किस देश ने जीता है?", opts_en:["Germany","Argentina","Italy","Brazil"], opts_hi:["जर्मनी","अर्जेंटीना","इटली","ब्राज़ील"], ans:3},
+  {id:'w30', cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"Which company makes the iPhone?",                  q_hi:"iPhone कौन सी कंपनी बनाती है?", opts_en:["Samsung","Google","Apple","Sony"], opts_hi:["सैमसंग","गूगल","एप्पल","सोनी"], ans:2},
+  {id:'w31', cat_en:"Economy",      cat_hi:"अर्थव्यवस्था", q_en:"Which is the world's largest stock exchange by market cap?", q_hi:"मार्केट कैप के हिसाब से दुनिया का सबसे बड़ा स्टॉक एक्सचेंज कौन सा है?", opts_en:["LSE","BSE","NYSE","NASDAQ"], opts_hi:["LSE","BSE","NYSE","NASDAQ"], ans:2},
+  {id:'w32', cat_en:"India GK",     cat_hi:"भारत GK",      q_en:"Which is the longest river in India?",              q_hi:"भारत की सबसे लंबी नदी कौन सी है?", opts_en:["Yamuna","Brahmaputra","Ganga","Godavari"], opts_hi:["यमुना","ब्रह्मपुत्र","गंगा","गोदावरी"], ans:2},
+  {id:'w33', cat_en:"Current Affairs", cat_hi:"करंट अफेयर्स", q_en:"Which Indian became the first to win an individual Olympic gold in shooting (2008)?", q_hi:"2008 में शूटिंग में व्यक्तिगत ओलंपिक स्वर्ण जीतने वाले पहले भारतीय कौन थे?", opts_en:["Virender Sehwag","Abhinav Bindra","Sania Mirza","Leander Paes"], opts_hi:["वीरेंद्र सहवाग","अभिनव बिंद्रा","सानिया मिर्ज़ा","लिएंडर पेस"], ans:1},
+  {id:'w34', cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"Which planet has the most moons?",                  q_hi:"किस ग्रह के सबसे ज़्यादा चंद्रमा हैं?", opts_en:["Jupiter","Saturn","Uranus","Neptune"], opts_hi:["बृहस्पति","शनि","यूरेनस","नेप्च्यून"], ans:1},
+  {id:'w35', cat_en:"History",      cat_hi:"इतिहास",        q_en:"Who gave the famous 'Tryst with Destiny' speech?",  q_hi:"'नियति से मिलन' भाषण किसने दिया था?", opts_en:["Ambedkar","Patel","Nehru","Gandhi"], opts_hi:["अंबेडकर","पटेल","नेहरू","गांधी"], ans:2},
+  // More questions...
+  {id:'w36', cat_en:"Biology",      cat_hi:"जीव विज्ञान",  q_en:"Which vitamin is produced by sunlight?",            q_hi:"सूरज की रोशनी से कौन सा विटामिन बनता है?", opts_en:["Vitamin A","Vitamin B","Vitamin C","Vitamin D"], opts_hi:["विटामिन A","विटामिन B","विटामिन C","विटामिन D"], ans:3},
+  {id:'w37', cat_en:"World Affairs", cat_hi:"विश्व",        q_en:"Which is the smallest country in the world?",       q_hi:"दुनिया का सबसे छोटा देश कौन सा है?", opts_en:["Monaco","San Marino","Liechtenstein","Vatican City"], opts_hi:["मोनाको","सैन मारिनो","लिकटेंस्टाइन","वेटिकन सिटी"], ans:3},
+  {id:'w38', cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"What does 'URL' stand for?",                       q_hi:"URL का पूरा नाम क्या है?", opts_en:["Universal Resource Locator","Uniform Resource Locator","Universal Relay Link","Unique Resource Label"], opts_hi:["यूनिवर्सल रिसोर्स लोकेटर","यूनिफॉर्म रिसोर्स लोकेटर","यूनिवर्सल रिले लिंक","यूनीक रिसोर्स लेबल"], ans:1},
+  {id:'w39', cat_en:"Sports",       cat_hi:"खेल",           q_en:"How many gold medals did Neeraj Chopra win in Tokyo Olympics 2020?", q_hi:"टोक्यो ओलंपिक 2020 में नीरज चोपड़ा ने कितने गोल्ड मेडल जीते?", opts_en:["0","1","2","3"], opts_hi:["0","1","2","3"], ans:1},
+  {id:'w40', cat_en:"Current Affairs", cat_hi:"करंट अफेयर्स", q_en:"Which Indian space mission landed on the lunar south pole in 2023?", q_hi:"2023 में चाँद के दक्षिणी ध्रुव पर कौन सा भारतीय मिशन उतरा?", opts_en:["Chandrayaan-1","Chandrayaan-2","Chandrayaan-3","Mangalyaan"], opts_hi:["चंद्रयान-1","चंद्रयान-2","चंद्रयान-3","मंगलयान"], ans:2},
+  {id:'w41', cat_en:"India GK",     cat_hi:"भारत GK",       q_en:"How many states are in India?",                     q_hi:"भारत में कितने राज्य हैं?", opts_en:["25","28","29","30"], opts_hi:["25","28","29","30"], ans:1},
+  {id:'w42', cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"What is the boiling point of water at sea level?",  q_hi:"समुद्र तल पर पानी का क्वथनांक कितना होता है?", opts_en:["90°C","95°C","100°C","105°C"], opts_hi:["90°C","95°C","100°C","105°C"], ans:2},
+  {id:'w43', cat_en:"History",      cat_hi:"इतिहास",        q_en:"In which year was the first iPhone launched?",      q_hi:"पहला iPhone किस साल लॉन्च हुआ था?", opts_en:["2005","2006","2007","2008"], opts_hi:["2005","2006","2007","2008"], ans:2},
+  {id:'w44', cat_en:"World Affairs", cat_hi:"विश्व",        q_en:"Which is the tallest mountain in the world?",       q_hi:"दुनिया की सबसे ऊंची पर्वत चोटी कौन सी है?", opts_en:["K2","Kangchenjunga","Mount Everest","Lhotse"], opts_hi:["K2","कंचनजंगा","माउंट एवरेस्ट","ल्होत्से"], ans:2},
+  {id:'w45', cat_en:"Economy",      cat_hi:"अर्थव्यवस्था", q_en:"Which is the currency of Japan?",                   q_hi:"जापान की मुद्रा क्या है?", opts_en:["Yuan","Won","Yen","Baht"], opts_hi:["युआन","वोन","येन","बात"], ans:2},
+  {id:'w46', cat_en:"Biology",      cat_hi:"जीव विज्ञान",  q_en:"What is the largest organ in the human body?",     q_hi:"मानव शरीर का सबसे बड़ा अंग कौन सा है?", opts_en:["Heart","Liver","Lungs","Skin"], opts_hi:["हृदय","यकृत","फेफड़े","त्वचा"], ans:3},
+  {id:'w47', cat_en:"Technology",   cat_hi:"टेक्नोलॉजी",   q_en:"Who founded Microsoft?",                            q_hi:"Microsoft की स्थापना किसने की?", opts_en:["Steve Jobs","Bill Gates","Larry Page","Mark Zuckerberg"], opts_hi:["स्टीव जॉब्स","बिल गेट्स","लैरी पेज","मार्क ज़करबर्ग"], ans:1},
+  {id:'w48', cat_en:"Sports",       cat_hi:"खेल",           q_en:"Which country will host the 2028 Summer Olympics?", q_hi:"2028 के ग्रीष्मकालीन ओलंपिक की मेजबानी कौन सा देश करेगा?", opts_en:["France","Australia","USA","Japan"], opts_hi:["फ्रांस","ऑस्ट्रेलिया","अमेरिका","जापान"], ans:2},
+  {id:'w49', cat_en:"Current Affairs", cat_hi:"करंट अफेयर्स", q_en:"What does 'UPI' stand for in India's payment system?", q_hi:"भारत के पेमेंट सिस्टम में 'UPI' का पूरा नाम क्या है?", opts_en:["United Payment Interface","Unified Payments Interface","Universal Payment Index","Unique Payment Integration"], opts_hi:["यूनाइटेड पेमेंट इंटरफ़ेस","यूनिफाइड पेमेंट्स इंटरफ़ेस","यूनिवर्सल पेमेंट इंडेक्स","यूनीक पेमेंट इंटीग्रेशन"], ans:1},
+  {id:'w50', cat_en:"Science",      cat_hi:"विज्ञान",       q_en:"Which element has the symbol 'Au'?",               q_hi:"'Au' किस तत्व का रासायनिक प्रतीक है?", opts_en:["Silver","Aluminum","Gold","Copper"], opts_hi:["चाँदी","एल्युमीनियम","सोना","तांबा"], ans:2},
+];
+
+// ============================================================
+//  SELF QUESTIONS (Psychological)
+// ============================================================
+const selfQuestions = [
+  {id:'s1',
+   cat_en:"Emotional Style", cat_hi:"भावनात्मक शैली",
+   q_en:"When something really upsets you, what's your first instinct?",
+   q_hi:"जब कुछ बहुत परेशान करे, तो पहली प्रतिक्रिया क्या होती है तुम्हारी?",
+   opts_en:["I stay silent and process alone","I talk to someone immediately","I distract myself","I get angry first then calm down"],
+   opts_hi:["चुप हो जाता/ती हूँ, अकेले सोचता/ती हूँ","किसी से बात करता/ती हूँ","खुद को distract कर लेता/ती हूँ","पहले गुस्सा, फिर शांत"],
+   insight_en:"Your emotional processing style shapes your relationships more than you think. There's no wrong answer — just awareness.",
+   insight_hi:"तुम्हारी भावनाएं कैसे process होती हैं, यही तुम्हारे रिश्तों को सबसे ज़्यादा shape करता है। कोई गलत जवाब नहीं — बस जागरूकता।"},
+  {id:'s2',
+   cat_en:"Self Worth", cat_hi:"आत्मसम्मान",
+   q_en:"Deep down, how much do you believe you deserve good things?",
+   q_hi:"अंदर से, तुम कितना मानते हो कि तुम अच्छी चीज़ों के लायक हो?",
+   opts_en:["100% — I deserve everything","I'm still working on believing that","Sometimes I feel undeserving","I often feel like a burden"],
+   opts_hi:["पूरी तरह — मैं सब कुछ का हकदार हूँ","अभी भी खुद पर विश्वास बना रहा/ही हूँ","कभी-कभी अयोग्य महसूस होता है","अक्सर खुद को बोझ समझता/ती हूँ"],
+   insight_en:"Self-worth is the foundation of everything. The fact that you're reflecting on this is already a huge step forward.",
+   insight_hi:"आत्म-सम्मान हर चीज़ की नींव है। इस पर सोचना ही एक बड़ा कदम है।"},
+  {id:'s3',
+   cat_en:"Motivation", cat_hi:"प्रेरणा",
+   q_en:"What truly drives you in life right now?",
+   q_hi:"अभी ज़िंदगी में तुम्हें सबसे ज़्यादा क्या drive करता है?",
+   opts_en:["Financial security","Passion & purpose","Proving people wrong","Making family proud"],
+   opts_hi:["आर्थिक सुरक्षा","जुनून और मकसद","लोगों को गलत साबित करना","परिवार को गर्व महसूस कराना"],
+   insight_en:"Your core motivation is your compass. Knowing it helps you make decisions that feel right.",
+   insight_hi:"तुम्हारी मुख्य प्रेरणा तुम्हारा कम्पास है। इसे जानने से सही फैसले लेना आसान हो जाता है।"},
+  {id:'s4',
+   cat_en:"Social Comfort", cat_hi:"सामाजिक आराम",
+   q_en:"How do you feel walking into a room full of strangers?",
+   q_hi:"अजनबियों से भरे कमरे में जाने पर कैसा feel होता है?",
+   opts_en:["Excited — I love meeting people","Anxious but I manage","I'd rather avoid it","Neutral — just another situation"],
+   opts_hi:["रोमांचित — मुझे नए लोग मिलना पसंद है","घबराहट होती है पर निभा लेता/ती हूँ","बचना चाहता/ती हूँ","Neutral — बस एक situation है"],
+   insight_en:"Your comfort with strangers reflects your relationship with uncertainty. Both introverts and extroverts have superpowers.",
+   insight_hi:"अजनबियों के साथ आराम, अनिश्चितता से तुम्हारे रिश्ते को दर्शाता है। Introvert और Extrovert दोनों के पास superpower होती है।"},
+  {id:'s5',
+   cat_en:"Dreams & Reality", cat_hi:"सपने और हकीकत",
+   q_en:"Which of these describes your current relationship with your dreams?",
+   q_hi:"अभी तुम्हारे सपनों के साथ तुम्हारा रिश्ता कैसा है?",
+   opts_en:["Actively chasing them","Dreaming but afraid to start","I've given up on old dreams","I'm creating new ones"],
+   opts_hi:["पूरे जोश से पीछे लगा/ई हूँ","सोचता/ती हूँ पर शुरू करने से डर लगता है","पुराने सपने छोड़ दिए","नए सपने बना रहा/ही हूँ"],
+   insight_en:"Dreams aren't destinations — they're directions. Even dreaming while afraid is braver than not dreaming at all.",
+   insight_hi:"सपने मंज़िल नहीं, दिशा हैं। डरते हुए भी सपने देखना, न देखने से बहादुर है।"},
+  {id:'s6',
+   cat_en:"Failure Response", cat_hi:"असफलता पर प्रतिक्रिया",
+   q_en:"When you fail at something important, your immediate thought is:",
+   q_hi:"किसी ज़रूरी काम में असफल होने पर पहला ख्याल क्या आता है?",
+   opts_en:["'What can I learn from this?'","'I knew I'd mess this up'","'Who's to blame here?'","'I'll try again differently'"],
+   opts_hi:["'इससे मैं क्या सीख सकता/ती हूँ?'","'मुझे पता था गड़बड़ होगी'","'किसकी गलती है?'","'अलग तरीके से दोबारा कोशिश करूँगा/ंगी'"],
+   insight_en:"Your failure response is your growth fingerprint. Growth mindset isn't about ignoring failure — it's about dancing with it.",
+   insight_hi:"असफलता पर तुम्हारी प्रतिक्रिया तुम्हारी growth का fingerprint है।"},
+  {id:'s7',
+   cat_en:"Inner Peace", cat_hi:"मन की शांति",
+   q_en:"What does your mind most need right now?",
+   q_hi:"अभी तुम्हारे मन को सबसे ज़्यादा किस चीज़ की ज़रूरत है?",
+   opts_en:["Rest and stillness","Direction and clarity","Excitement and energy","Emotional connection"],
+   opts_hi:["आराम और शांति","दिशा और स्पष्टता","उत्साह और ऊर्जा","भावनात्मक जुड़ाव"],
+   insight_en:"Knowing what you need is half the work of getting it. The fact you paused to think about this is already healing.",
+   insight_hi:"ज़रूरत को पहचानना आधी ज़िम्मेदारी है। इस पर रुककर सोचना भी एक तरह की healing है।"},
+  {id:'s8',
+   cat_en:"Trust Style", cat_hi:"भरोसे की शैली",
+   q_en:"How do you generally approach trust with new people?",
+   q_hi:"नए लोगों पर भरोसे के मामले में तुम्हारा नज़रिया कैसा है?",
+   opts_en:["Trust first, verify later","Verify first, then open up slowly","I trust actions more than words","I find it very hard to trust anyone"],
+   opts_hi:["पहले भरोसा, बाद में परखना","पहले परखना, फिर धीरे खुलना","शब्दों से ज़्यादा काम पर भरोसा","किसी पर भरोसा करना बहुत मुश्किल लगता है"],
+   insight_en:"Your trust style is often shaped by past experiences. Protecting yourself is wise — but some people are worth the risk.",
+   insight_hi:"भरोसे की शैली अक्सर पिछले अनुभवों से बनती है। खुद की रक्षा करना ज़रूरी है — पर कुछ लोग risk के लायक होते हैं।"},
+  {id:'s9',
+   cat_en:"Life Energy", cat_hi:"जीवन ऊर्जा",
+   q_en:"At the end of a tough day, what restores your energy most?",
+   q_hi:"एक थकाने वाले दिन के बाद, तुम्हारी energy सबसे ज़्यादा किससे वापस आती है?",
+   opts_en:["Being alone in silence","Music, shows or gaming","Talking to close ones","Physical exercise"],
+   opts_hi:["अकेले शांति में रहना","Music, shows या gaming","करीबी लोगों से बात","शारीरिक व्यायाम"],
+   insight_en:"What restores you is what you love. Listen to it more often — your energy is your most important resource.",
+   insight_hi:"जो तुम्हें फिर से भरे, वही तुम्हारी असली पसंद है। इसे ज़्यादा सुनो — तुम्हारी energy तुम्हारा सबसे बड़ा resource है।"},
+  {id:'s10',
+   cat_en:"Identity", cat_hi:"पहचान",
+   q_en:"Which word best describes what you want to be known for in life?",
+   q_hi:"ज़िंदगी में किस चीज़ के लिए जाना जाना चाहते हो?",
+   opts_en:["Success","Kindness","Creativity","Courage"],
+   opts_hi:["सफलता","दयालुता","रचनात्मकता","साहस"],
+   insight_en:"What you want to be known for is what you value most. Align your daily actions with this word and watch magic happen.",
+   insight_hi:"जिस चीज़ के लिए जाने जाना चाहते हो, वही तुम्हारी सबसे बड़ी value है। रोज़ के काम इससे जोड़ो — जादू होगा।"},
+  {id:'s11',
+   cat_en:"Comparison Trap", cat_hi:"तुलना का जाल",
+   q_en:"When you see someone more successful than you, your first feeling is:",
+   q_hi:"किसी को खुद से ज़्यादा successful देखकर पहला feeling क्या होती है?",
+   opts_en:["Inspired to level up","Jealous, honestly","Indifferent — their journey isn't mine","Curious about how they did it"],
+   opts_hi:["Inspired होता/ती हूँ","Jealous, honestly बोलूँ तो","कोई फर्क नहीं पड़ता — उनकी journey, मेरी नहीं","जानना चाहता/ती हूँ कि कैसे किया"],
+   insight_en:"Jealousy is just admiration with frustration attached. It's telling you what YOU want — use that signal.",
+   insight_hi:"Jealousy असल में admiration है जिसमें frustration जुड़ी है। यह बता रही है तुम क्या चाहते हो — इस signal का उपयोग करो।"},
+  {id:'s12',
+   cat_en:"Comfort Zone", cat_hi:"कम्फर्ट ज़ोन",
+   q_en:"How often do you deliberately do something uncomfortable to grow?",
+   q_hi:"तुम जानबूझकर कितनी बार कुछ uncomfortable करते हो, grow करने के लिए?",
+   opts_en:["Almost every week","Sometimes when forced","Rarely","I'm trying to start doing this more"],
+   opts_hi:["लगभग हर हफ्ते","कभी-कभी जब मजबूरी हो","बहुत कम","कोशिश कर रहा/ही हूँ कि ज़्यादा करूँ"],
+   insight_en:"Growth lives exactly where comfort ends. Even tiny discomfort repetitions compound into massive confidence over time.",
+   insight_hi:"Growth वहीं मिलती है जहाँ comfort खत्म होती है। छोटी-छोटी तकलीफें मिलकर बड़ा confidence बनाती हैं।"},
+  {id:'s13',
+   cat_en:"Inner Critic", cat_hi:"आंतरिक आलोचक",
+   q_en:"How often does a voice in your head tell you that you're not good enough?",
+   q_hi:"अपने मन में कितनी बार यह आवाज़ आती है कि 'तुम काफी अच्छे नहीं हो'?",
+   opts_en:["Rarely — I believe in myself","Sometimes in tough moments","Very often — it's almost constant","I've learned to hear it and move on"],
+   opts_hi:["कम ही — मुझे खुद पर विश्वास है","मुश्किल पलों में कभी-कभी","बहुत अक्सर — लगभग हमेशा","सुनना सीख लिया है और आगे बढ़ जाता/ती हूँ"],
+   insight_en:"That inner critic is usually an old voice from someone else's fear. You are more capable than it believes.",
+   insight_hi:"वह आंतरिक आलोचक अक्सर किसी और के डर की पुरानी आवाज़ होती है। तुम उससे कहीं ज़्यादा काबिल हो।"},
+  {id:'s14',
+   cat_en:"Gratitude Habit", cat_hi:"कृतज्ञता की आदत",
+   q_en:"How often do you consciously feel grateful for your life?",
+   q_hi:"जानबूझकर अपनी ज़िंदगी के लिए शुक्रगुज़ार कितनी बार feel करते हो?",
+   opts_en:["Every day — it's a habit","When things are going well","Rarely — I'm focused on what's missing","I want to practice this more"],
+   opts_hi:["हर दिन — यह आदत बन गई है","जब सब ठीक चल रहा हो","कम ही — मैं कमी पर ध्यान देता/ती हूँ","ज़्यादा practice करना चाहता/ती हूँ"],
+   insight_en:"Gratitude is not toxic positivity — it's noticing the good while holding the hard. Both can exist together.",
+   insight_hi:"कृतज्ञता toxic positivity नहीं है — यह मुश्किल को मानते हुए अच्छाई देखना है। दोनों साथ रह सकते हैं।"},
+  {id:'s15',
+   cat_en:"Purpose", cat_hi:"उद्देश्य",
+   q_en:"When do you feel most alive and truly yourself?",
+   q_hi:"तुम कब सबसे ज़्यादा ज़िंदा और सच में खुद जैसे feel करते हो?",
+   opts_en:["When I'm creating something","When I'm helping others","When I'm learning new things","When I'm completely free"],
+   opts_hi:["जब कुछ create कर रहा/ही हूँ","जब दूसरों की मदद कर रहा/ही हूँ","जब कुछ नया सीख रहा/ही हूँ","जब पूरी तरह आज़ाद होता/ती हूँ"],
+   insight_en:"That moment when you feel most alive? That's your purpose calling. Follow that feeling more often.",
+   insight_hi:"जब सबसे ज़्यादा ज़िंदा feel होता है — वही तुम्हारा उद्देश्य बुला रहा है। उस feeling के पीछे जाओ।"},
+];
+
+// ============================================================
+//  AUDIO (Web Audio API)
+// ============================================================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, type, duration, gain=0.3, delay=0) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, ctx.currentTime + delay);
+    g.gain.linearRampToValueAtTime(gain, ctx.currentTime + delay + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + duration);
+  } catch(e){}
+}
+function sfxCorrect() {
+  playTone(440, 'sine', 0.12, 0.25);
+  playTone(554, 'sine', 0.12, 0.25, 0.1);
+  playTone(660, 'sine', 0.2,  0.25, 0.2);
+}
+function sfxWrong() {
+  playTone(220, 'sawtooth', 0.15, 0.2);
+  playTone(180, 'sawtooth', 0.2,  0.2, 0.1);
+}
+function sfxClick() {
+  playTone(600, 'sine', 0.05, 0.15);
+}
+function sfxStreak() {
+  [523,659,784,1047].forEach((f,i) => playTone(f,'sine',0.15,0.2,i*0.08));
+}
+
+// ============================================================
+//  LANGUAGE
+// ============================================================
+function setLang(l) {
+  lang = l;
+  document.getElementById('btnEN').classList.toggle('active', l==='en');
+  document.getElementById('btnHI').classList.toggle('active', l==='hi');
+  const t = T[l];
+  document.getElementById('homeSub').textContent       = t.homeSub;
+  document.getElementById('worldCardTitle').textContent = t.worldCardTitle;
+  document.getElementById('worldCardDesc').textContent  = t.worldCardDesc;
+  document.getElementById('selfCardTitle').textContent  = t.selfCardTitle;
+  document.getElementById('selfCardDesc').textContent   = t.selfCardDesc;
+  if (currentQ) renderCurrentQuestion();
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function showScreen(id) {
+  ['homeScreen','questionScreen','adScreen'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  document.getElementById(id).style.display = 'block';
+}
+
+function goHome() {
+  sfxClick();
+  currentMode = null;
+  showScreen('homeScreen');
+}
+
+function startMode(mode) {
+  sfxClick();
+  currentMode = mode;
+  qCount = 0;
+  qSinceAd = 0;
+  nextQuestion();
+}
+
+// ============================================================
+//  QUESTION ENGINE
+// ============================================================
+function getRandomQuestion() {
+  const pool = currentMode === 'world' ? worldQuestions : selfQuestions;
+  const used  = currentMode === 'world' ? usedWorldIds   : usedSelfIds;
+
+  let available = pool.filter(q => !used.has(q.id));
+  if (available.length === 0) {
+    // Reset used — truly infinite
+    if (currentMode === 'world') usedWorldIds.clear(); else usedSelfIds.clear();
+    available = pool;
+  }
+  const q = available[Math.floor(Math.random() * available.length)];
+  if (currentMode === 'world') usedWorldIds.add(q.id); else usedSelfIds.add(q.id);
+  return q;
+}
+
+function nextQuestion() {
+  sfxClick();
+  qSinceAd++;
+  if (qSinceAd > 3) {
+    qSinceAd = 0;
+    showAd();
+    return;
+  }
+  answered = false;
+  currentQ = getRandomQuestion();
+  qCount++;
+  showScreen('questionScreen');
+  renderCurrentQuestion();
+}
+
+function renderCurrentQuestion() {
+  const q  = currentQ;
+  const t  = T[lang];
+  const isWorld = currentMode === 'world';
+
+  const tagEl = document.getElementById('topbar').querySelector ? null : null;
+  document.getElementById('qCategory').textContent = lang==='en' ? q.cat_en : q.cat_hi;
+  document.getElementById('qText').textContent     = lang==='en' ? q.q_en   : q.q_hi;
+  document.getElementById('qCountDisplay').textContent = `Q ${qCount}`;
+
+  // progress (cycles 0-100 per 10 questions)
+  document.getElementById('progressFill').style.width = ((qCount % 10) * 10) + '%';
+
+  // mode tag
+  const modeTag = document.querySelector('.q-mode-tag') || createModeTag();
+  if (isWorld) { modeTag.className = 'q-mode-tag tag-world'; modeTag.textContent = lang==='en'?'KNOW THE WORLD':'दुनिया जानो'; }
+  else         { modeTag.className = 'q-mode-tag tag-self';  modeTag.textContent = lang==='en'?'KNOW YOURSELF':'खुद को जानो'; }
+
+  // reset
+  document.getElementById('nextBtn').classList.remove('show');
+  document.getElementById('selfNextBtn').classList.remove('show');
+  document.getElementById('psychReflection').style.display = 'none';
+
+  // Render options
+  const optsEl = document.getElementById('optionsContainer');
+  optsEl.innerHTML = '';
+  const opts = lang==='en' ? q.opts_en : q.opts_hi;
+  const letters = ['A','B','C','D'];
+
+  if (isWorld) {
+    optsEl.style.display = 'flex';
+    opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerHTML = `<span class="opt-letter">${letters[i]}</span>${opt}`;
+      btn.onclick = () => handleWorldAnswer(i, btn);
+      addRipple(btn);
+      optsEl.appendChild(btn);
+    });
+    document.getElementById('nextBtn').textContent = t.next;
+  } else {
+    optsEl.style.display = 'flex';
+    opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.innerHTML = `<span class="opt-letter">${letters[i]}</span>${opt}`;
+      btn.onclick = () => handleSelfAnswer(i, btn);
+      addRipple(btn);
+      optsEl.appendChild(btn);
+    });
+    document.getElementById('selfNextBtn').textContent = t.selfNext;
+    document.getElementById('psychReflection').textContent = lang==='en' ? q.insight_en : q.insight_hi;
+  }
+}
+
+function createModeTag() {
+  const el = document.createElement('div');
+  el.className = 'q-mode-tag tag-world';
+  document.querySelector('.q-header').prepend(el);
+  return el;
+}
+
+// ============================================================
+//  ANSWER HANDLERS
+// ============================================================
+function handleWorldAnswer(i, btn) {
+  if (answered) return;
+  answered = true;
+  const correct = i === currentQ.ans;
+  const allBtns = document.querySelectorAll('.opt-btn');
+
+  allBtns.forEach(b => b.disabled = true);
+
+  if (correct) {
+    btn.classList.add('correct');
+    score += 10 + streak * 2;
+    streak++;
+    updateScore();
+    updateStreak();
+    sfxCorrect();
+    showFeedback(true);
+    spawnParticles(btn, ['⭐','✨','🔥','💥']);
+    if (streak % 5 === 0) sfxStreak();
+  } else {
+    btn.classList.add('wrong');
+    allBtns[currentQ.ans].classList.add('show-correct');
+    streak = 0;
+    updateStreak();
+    sfxWrong();
+    showFeedback(false);
+  }
+
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function handleSelfAnswer(i, btn) {
+  if (answered) return;
+  answered = true;
+  const allBtns = document.querySelectorAll('.opt-btn');
+  allBtns.forEach(b => b.disabled = true);
+  btn.classList.add('correct');
+  score += 5;
+  updateScore();
+  sfxCorrect();
+  spawnParticles(btn, ['💭','✨','🧠','💫']);
+
+  const refl = document.getElementById('psychReflection');
+  refl.style.display = 'block';
+  document.getElementById('selfNextBtn').classList.add('show');
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function updateScore() {
+  document.getElementById('scoreDisplay').textContent = score;
+  const el = document.getElementById('scoreDisplay');
+  el.style.transform = 'scale(1.4)';
+  setTimeout(() => el.style.transform = 'scale(1)', 200);
+}
+
+function updateStreak() {
+  const badge = document.getElementById('streakBadge');
+  const num   = document.getElementById('streakNum');
+  if (streak >= 2) {
+    num.textContent = streak;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function showFeedback(correct) {
+  const toast  = document.getElementById('feedbackToast');
+  const msgs   = T[lang][correct ? 'correct' : 'wrong'];
+  toast.textContent  = msgs[Math.floor(Math.random()*msgs.length)];
+  toast.className    = `feedback-toast show ${correct ? 'correct' : 'wrong'}`;
+  setTimeout(() => { toast.className = 'feedback-toast'; }, 1600);
+}
+
+function spawnParticles(btn, emojis) {
+  const rect = btn.getBoundingClientRect();
+  const cx   = rect.left + rect.width / 2;
+  const cy   = rect.top  + rect.height / 2;
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    const dx = (Math.random()-0.5)*160;
+    const rot = (Math.random()-0.5)*360;
+    p.style.cssText = `left:${cx}px;top:${cy}px;--dx:${dx}px;--rot:${rot}deg;animation-delay:${i*0.04}s`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1300);
+  }
+}
+
+function addRipple(btn) {
+  btn.addEventListener('click', function(e) {
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const size = Math.max(this.offsetWidth, this.offsetHeight);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.offsetX-size/2}px;top:${e.offsetY-size/2}px`;
+    this.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+  });
+}
+
+// ============================================================
+//  AD SYSTEM
+// ============================================================
+let adCountdownVal = 3;
+
+function showAd() {
+  showScreen('adScreen');
+  adCountdownVal = 3;
+  const t = T[lang];
+  document.getElementById('adLabel').textContent = t.adLabel;
+  document.getElementById('adSkipBtn').textContent = t.adWait;
+  document.getElementById('adSkipBtn').classList.remove('ready');
+  document.getElementById('adCountdown').textContent = adCountdownVal;
+  document.getElementById('adCountdownSub').textContent = t.adSub;
+
+  clearInterval(adTimer);
+  adTimer = setInterval(() => {
+    adCountdownVal--;
+    document.getElementById('adCountdown').textContent = adCountdownVal;
+    if (adCountdownVal <= 0) {
+      clearInterval(adTimer);
+      document.getElementById('adSkipBtn').textContent = T[lang].adReady;
+      document.getElementById('adSkipBtn').classList.add('ready');
+      document.getElementById('adCountdown').textContent = '✓';
+      document.getElementById('adCountdownSub').textContent = '';
+    }
+  }, 1000);
+}
+
+function skipAd() {
+  if (!document.getElementById('adSkipBtn').classList.contains('ready')) return;
+  sfxClick();
+  nextQuestion();
+}
+
+// ============================================================
+//  BIG FLASH for milestones
+// ============================================================
+function flashScore(text, color) {
+  const el = document.getElementById('bigFlash');
+  const inner = document.getElementById('bigFlashInner');
+  inner.style.background = color;
+  inner.style.webkitBackgroundClip = 'text';
+  inner.style.webkitTextFillColor = 'transparent';
+  inner.textContent = text;
+  el.className = 'big-flash show';
+  setTimeout(() => el.className = 'big-flash', 700);
+}
+
+// Milestone check
+const _origUpdateScore = updateScore;
+// milestone every 100 points
+let lastMilestone = 0;
+updateScore = function() {
+  _origUpdateScore();
+  if (Math.floor(score/100) > lastMilestone) {
+    lastMilestone = Math.floor(score/100);
+    flashScore(`${score} 🏆`, 'linear-gradient(90deg, #ffe04f, #ff4faa)');
+  }
+}
+
+// ============================================================
+//  INIT — render home
+// ============================================================
+showScreen('homeScreen');
+</script>
+</body>
+</html>

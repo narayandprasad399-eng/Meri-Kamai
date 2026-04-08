@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Liquid Sort - Infinite Puzzle</title>
+    <style>
+        :root {
+            --bg: #0f0c29; /* Dark gradient base */
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text: #ffffff;
+            --primary: #00f2fe;
+            --danger: #ff0844;
+            --ad-bg: rgba(0, 0, 0, 0.95);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; user-select: none; }
+
+        body {
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* Top Bar */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10; }
+        .level-text { font-size: 1.5rem; font-weight: bold; color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+        .help-btn { background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); border: none; color: white; padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px rgba(245, 87, 108, 0.5); animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* Game Area */
+        .game-board { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; padding: 20px; align-content: center; max-width: 500px; margin: 0 auto; }
+
+        /* Tubes Design (Glassmorphism) */
+        .tube-container { width: 50px; height: 180px; position: relative; cursor: pointer; transition: transform 0.3s ease; }
+        .tube-container.selected { transform: translateY(-20px) scale(1.05); }
+        
+        .tube { width: 100%; height: 100%; background: var(--glass); border: 3px solid var(--glass-border); border-top: none; border-radius: 0 0 25px 25px; display: flex; flex-direction: column-reverse; overflow: hidden; position: relative; box-shadow: inset 0 -10px 20px rgba(0,0,0,0.5), 0 10px 15px rgba(0,0,0,0.3); }
+        
+        /* Highlight ring for top */
+        .tube::after { content: ''; position: absolute; top: -3px; left: -3px; right: -3px; height: 6px; border: 3px solid var(--glass-border); border-radius: 50%; box-sizing: content-box; }
+
+        /* Liquid Blocks */
+        .liquid { width: 100%; height: 25%; transition: height 0.3s ease, background-color 0.3s ease; box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        .liquid.empty { height: 0; }
+
+        /* Modals & Overlays */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--ad-bg); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(5px); }
+        .overlay.active { display: flex; animation: fadeIn 0.4s ease; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .overlay h1 { font-size: 3rem; margin-bottom: 10px; color: #00f2fe; text-shadow: 0 0 20px #00f2fe; }
+        .overlay p { font-size: 1.2rem; margin-bottom: 30px; color: #ccc; }
+        
+        .ad-timer { font-size: 4rem; font-weight: bold; color: var(--danger); text-shadow: 0 0 30px var(--danger); margin: 20px 0; }
+
+        button.action-btn { background: transparent; border: 2px solid var(--primary); color: var(--primary); padding: 15px 40px; font-size: 1.2rem; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.3s; margin-top: 10px; }
+        button.action-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 20px var(--primary); }
+        
+        button.ad-link-btn { background: linear-gradient(45deg, #ff9900, #ff5500); border: none; color: white; padding: 15px 40px; font-size: 1.2rem; border-radius: 8px; cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px #ff9900; animation: pulse 1s infinite; margin-top: 10px; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Ambient BGM -->
+    <audio id="bg-music" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-hazy-after-hours-132.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Top UI -->
+    <div class="header">
+        <div class="level-text">Level <span id="ui-level">1</span></div>
+        <button class="help-btn" onclick="requestExtraTube()">+ Tube (Ad)</button>
+    </div>
+
+    <!-- Game Board -->
+    <div class="game-board" id="board">
+        <!-- Tubes injected via JS -->
+    </div>
+
+    <!-- Main Menu / Start Screen -->
+    <div id="start-screen" class="overlay active">
+        <h1>Neon Sort</h1>
+        <p>Infinite Liquid Puzzle</p>
+        <button class="action-btn" onclick="startGame()">Start Game</button>
+    </div>
+
+    <!-- Win Screen -->
+    <div id="win-screen" class="overlay">
+        <h1>Level Cleared!</h1>
+        <p>Great logic! Ready for the next?</p>
+        <button class="action-btn" onclick="triggerNextLevelAd()">Next Level</button>
+    </div>
+
+    <!-- Adsterra Overlay -->
+    <div id="ad-screen" class="overlay">
+        <h2>Sponsor Message</h2>
+        <p>Please support us to continue...</p>
+        <div class="ad-timer" id="ad-timer">5</div>
+        <button id="ad-link-btn" class="ad-link-btn hidden" onclick="openAdsterraLink()">Click to Continue</button>
+        <button id="ad-skip-btn" class="action-btn hidden" onclick="closeAd()">Resume Game</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // ADSTERRA SMART LINK SETTINGS
+        // ==========================================
+        const ADSTERRA_LINK = "https://www.profitablecpmrate.com/your-code-here"; // CHANGE THIS LINK
+
+        // ==========================================
+        // GAME ENGINE
+        // ==========================================
+        const colorsList = ['#FF0844', '#00F2FE', '#FFB199', '#11998E', '#A18CD1', '#F9D423', '#FF4E50', '#00C9FF'];
+        const MAX_CAPACITY = 4;
+        
+        let level = parseInt(localStorage.getItem('sort_level')) || 1;
+        let tubes = []; // Array of arrays containing colors
+        let selectedTubeIndex = -1;
+        
+        let adCallback = null;
+        let adInterval = null;
+
+        // Initialization
+        function startGame() {
+            document.getElementById('start-screen').classList.remove('active');
+            playBGM();
+            loadLevel();
+        }
+
+        function playBGM() {
+            let audio = document.getElementById('bg-music');
+            audio.volume = 0.4;
+            audio.play().catch(() => console.log('User interaction required for audio.'));
+        }
+
+        // Logic for Infinite Procedural Levels
+        function getDifficulty() {
+            // Level 1-3: 3 colors, Level 4-6: 4 colors ... Max 8 colors
+            let colorCount = Math.min(3 + Math.floor((level - 1) / 3), colorsList.length);
+            return colorCount;
+        }
+
+        function loadLevel() {
+            document.getElementById('ui-level').innerText = level;
+            localStorage.setItem('sort_level', level);
+            selectedTubeIndex = -1;
+
+            let colorCount = getDifficulty();
+            let currentColors = colorsList.slice(0, colorCount);
+            
+            // 1. Create solved state
+            tubes = [];
+            for(let i=0; i<colorCount; i++) {
+                tubes.push([currentColors[i], currentColors[i], currentColors[i], currentColors[i]]);
+            }
+            tubes.push([]); // Empty tube 1
+            tubes.push([]); // Empty tube 2
+
+            // 2. Scramble backward to guarantee solvable state
+            let scrambleMoves = colorCount * 20; 
+            for(let i=0; i < scrambleMoves; i++) {
+                let src = Math.floor(Math.random() * tubes.length);
+                let dest = Math.floor(Math.random() * tubes.length);
+                
+                // Reverse move valid if dest is not full and src is not empty
+                if(src !== dest && tubes[src].length > 0 && tubes[dest].length < MAX_CAPACITY) {
+                    tubes[dest].push(tubes[src].pop());
+                }
+            }
+            
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+
+            tubes.forEach((tube, index) => {
+                let container = document.createElement('div');
+                container.className = `tube-container ${selectedTubeIndex === index ? 'selected' : ''}`;
+                container.onclick = () => handleTubeClick(index);
+
+                let tubeDiv = document.createElement('div');
+                tubeDiv.className = 'tube';
+
+                // Fill liquid blocks
+                for(let i=0; i<MAX_CAPACITY; i++) {
+                    let liquid = document.createElement('div');
+                    liquid.className = 'liquid';
+                    if(tube[i]) {
+                        liquid.style.backgroundColor = tube[i];
+                        liquid.style.height = '25%';
+                    } else {
+                        liquid.style.backgroundColor = 'transparent';
+                        liquid.style.height = '25%';
+                    }
+                    tubeDiv.appendChild(liquid);
+                }
+
+                container.appendChild(tubeDiv);
+                board.appendChild(container);
+            });
+        }
+
+        function handleTubeClick(index) {
+            if(selectedTubeIndex === -1) {
+                // Select tube if it has liquid
+                if(tubes[index].length > 0) {
+                    selectedTubeIndex = index;
+                    renderBoard();
+                }
+            } else {
+                if(selectedTubeIndex === index) {
+                    // Deselect
+                    selectedTubeIndex = -1;
+                    renderBoard();
+                } else {
+                    // Try to pour
+                    if(canPour(selectedTubeIndex, index)) {
+                        pourLiquid(selectedTubeIndex, index);
+                        selectedTubeIndex = -1;
+                        renderBoard();
+                        checkWinCondition();
+                    } else {
+                        // Invalid move, change selection if clicking another valid tube
+                        if(tubes[index].length > 0) {
+                            selectedTubeIndex = index;
+                            renderBoard();
+                        }
+                    }
+                }
+            }
+        }
+
+        function canPour(src, dest) {
+            if(tubes[src].length === 0) return false;
+            if(tubes[dest].length === MAX_CAPACITY) return false;
+            
+            let colorToPour = tubes[src][tubes[src].length - 1];
+            if(tubes[dest].length === 0) return true;
+            
+            let destTopColor = tubes[dest][tubes[dest].length - 1];
+            return colorToPour === destTopColor;
+        }
+
+        function pourLiquid(src, dest) {
+            let colorToPour = tubes[src][tubes[src].length - 1];
+            // Pour all blocks of the same color if space permits (Psychologically satisfying)
+            while(tubes[src].length > 0 && tubes[dest].length < MAX_CAPACITY && tubes[src][tubes[src].length - 1] === colorToPour) {
+                tubes[dest].push(tubes[src].pop());
+            }
+        }
+
+        function checkWinCondition() {
+            let isWin = tubes.every(tube => {
+                // A tube is valid if it's empty OR full of the exact same color
+                if(tube.length === 0) return true;
+                if(tube.length !== MAX_CAPACITY) return false;
+                let firstColor = tube[0];
+                return tube.every(color => color === firstColor);
+            });
+
+            if(isWin) {
+                setTimeout(() => {
+                    document.getElementById('win-screen').classList.add('active');
+                }, 500);
+            }
+        }
+
+        // ==========================================
+        // MONETIZATION & ADSTERRA LOGIC
+        // ==========================================
+
+        function triggerNextLevelAd() {
+            document.getElementById('win-screen').classList.remove('active');
+            level++;
+            // 5 second ad for next level
+            showAd(5, () => loadLevel());
+        }
+
+        function requestExtraTube() {
+            // 15 second ad for extra tube help
+            showAd(15, () => {
+                tubes.push([]); // Add new empty tube
+                selectedTubeIndex = -1;
+                renderBoard();
+            });
+        }
+
+        function showAd(seconds, callback) {
+            adCallback = callback;
+            const overlay = document.getElementById('ad-screen');
+            const timerEl = document.getElementById('ad-timer');
+            const linkBtn = document.getElementById('ad-link-btn');
+            const skipBtn = document.getElementById('ad-skip-btn');
+
+            overlay.classList.add('active');
+            linkBtn.classList.add('hidden');
+            skipBtn.classList.add('hidden');
+            
+            let timeLeft = seconds;
+            timerEl.innerText = timeLeft;
+
+            adInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                
+                // Show Adsterra link mid-way
+                if (timeLeft === Math.floor(seconds / 2)) {
+                    linkBtn.classList.remove('hidden');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(adInterval);
+                    timerEl.innerText = "0";
+                    skipBtn.classList.remove('hidden'); // Allow them to resume
+                }
+            }, 1000);
+        }
+
+        function openAdsterraLink() {
+            // Open publisher link in a new tab
+            window.open(ADSTERRA_LINK, '_blank');
+            // Hide link button to make them wait for the rest of the timer
+            document.getElementById('ad-link-btn').classList.add('hidden');
+        }
+
+        function closeAd() {
+            document.getElementById('ad-screen').classList.remove('active');
+            if (adCallback) {
+                adCallback();
+                adCallback = null;
+            }
+        }
+
+    </script>
+</body>
+</html>
