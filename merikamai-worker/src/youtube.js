@@ -47,7 +47,7 @@ export async function handleYouTube(request, env) {
     type: 'video',
     videoDuration: 'short',        // 60 sec se kam
     videoEmbeddable: 'true',       // Sirf embeddable videos
-    maxResults: '20',
+    maxResults: '50',
     order: 'relevance',
     relevanceLanguage: 'hi',       // Hindi prefer karo
     regionCode: 'IN',              // India

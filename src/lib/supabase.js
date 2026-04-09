@@ -42,10 +42,10 @@ export const getUserPortal = async (userId) => {
   return { data, error }
 }
 
-export const createPortal = async (userId, slug, email) => {
+export const createPortal = async (userId, slug, email, portalName = 'My Portal') => {
   const { data, error } = await supabase
     .from('portals')
-    .insert([{ user_id: userId, slug, email, plan: 'free', selected_games: [] }])
+    .insert([{ user_id: userId, slug, email, portal_name: portalName, plan: 'free', selected_games: [] }])
     .select()
     .single()
   return { data, error }
