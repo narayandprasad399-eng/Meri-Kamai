@@ -40,7 +40,7 @@ export default function GamesTab({ selectedGames, portalSlug }) {
     const iframeSrc = activeGame.isLocal ? activeGame.file : getGameUrl(activeGame.id);
 
     return (
-      <div style={{ height: 'calc(100vh - var(--tab-h) - 57px)', display: 'flex', flexDirection: 'column', background: '#000' }}>
+      <div style={{ height: 'calc(100dvh - var(--tab-h) - 57px)', display: 'flex', flexDirection: 'column', background: '#000' }}>
         <div style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
           <button onClick={closeGame} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', width: '32px', height: '32px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }}>←</button>
           <span style={{ fontFamily: 'Teko', fontSize: '20px', fontWeight: 700, color: '#fff' }}>

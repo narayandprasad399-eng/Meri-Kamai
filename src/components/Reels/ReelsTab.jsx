@@ -20,6 +20,11 @@ const applyAISort = (vids) => {
   const interest = getInterest()
   return [...vids].sort((a, b) => (interest[b.category] || 0) - (interest[a.category] || 0))
 }
+const PROMO_VIDEOS = [
+  '/videos/promo-english.mp4',
+  '/videos/promo-10th-board.mp4',
+  '/videos/promo-earn-money.mp4'
+];
 // ── KARMI MINDS COURSES ──────────────────────────
 const COURSES = [
   { 
@@ -176,7 +181,12 @@ export default function ReelsTab({ portalSlug }) {
   }
 
   const video = videos[currentIdx]
-  const isPromoTime = currentIdx > 0 && (currentIdx + 1) % 5 === 0
+  // चेक करो कि क्या प्रोमो का टाइम है
+  const isPromoTime = currentIdx > 0 && (currentIdx + 1) % 5 === 0;
+
+// कौन सा प्रोमो दिखाना है? (0, 1, 2 के बीच घूमता रहेगा)
+  const activePromoIndex = Math.floor(currentIdx / 5) % PROMO_VIDEOS.length;
+  const activeCourse = COURSES[activePromoIndex]; // जो वीडियो, उसी का टेक्स्ट
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--tab-h) - 57px)', background: '#000', userSelect: 'none', touchAction: 'none' }}>
@@ -218,33 +228,35 @@ export default function ReelsTab({ portalSlug }) {
 
             {isPromoTime ? (
               <div style={{ width: '100%', height: '100%', position: 'relative', background: '#0a0a0a' }}>
-
+                
                 {/* Sponsored Badge */}
                 <div style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)', color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 10px', borderRadius: 4, zIndex: 10, border: '1px solid rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
                   Sponsored
                 </div>
 
+                {/* डायनामिक वीडियो सोर्स */}
                 <video
-                  src="/videos/english-course-promo.mp4"
+                  src={PROMO_VIDEOS[activePromoIndex]}
                   autoPlay
                   playsInline
                   loop
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
 
+                {/* डायनामिक टेक्स्ट और लिंक */}
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 20, background: 'linear-gradient(to top, rgba(0,0,0,0.88), transparent)', zIndex: 5, pointerEvents: 'none' }}>
-                  <h2 style={{ fontFamily: 'Teko', fontSize: 32, color: '#fff', marginBottom: 5, lineHeight: 1 }}>Speak English Like a Pro!</h2>
-                  <p style={{ color: '#ff9500', fontSize: 14, fontWeight: 'bold', marginBottom: 15 }}>Karmi Minds Exclusive • Sirf ₹199</p>
+                  <h2 style={{ fontFamily: 'Teko', fontSize: 32, color: '#fff', marginBottom: 5, lineHeight: 1 }}>{activeCourse.title}</h2>
+                  <p style={{ color: '#ff9500', fontSize: 14, fontWeight: 'bold', marginBottom: 15 }}>Karmi Minds Exclusive • {activeCourse.desc}</p>
                   <a
-                    href="https://karmiminds.com"
+                    href={activeCourse.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ pointerEvents: 'auto', background: 'linear-gradient(135deg, #ff6b00, #ff9500)', color: '#000', textAlign: 'center', padding: 12, borderRadius: 8, fontWeight: 800, textDecoration: 'none', textTransform: 'uppercase', fontSize: 14 }}>
+                    style={{ pointerEvents: 'auto', background: activeCourse.bg, color: activeCourse.text, textAlign: 'center', padding: 12, borderRadius: 8, fontWeight: 800, textDecoration: 'none', textTransform: 'uppercase', fontSize: 14 }}>
                     👉 Enroll Now
                   </a>
                 </div>
 
-                {/* Next button promo pe bhi */}
+                {/* स्वाइप करने के लिए नीचे वाला बटन */}
                 <button onClick={goNext} style={{ position: 'absolute', bottom: 100, right: 12, background: 'linear-gradient(135deg,#ff6b00,#ff9500)', border: 'none', color: '#000', width: 44, height: 44, borderRadius: '50%', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, zIndex: 10 }}>↓</button>
               </div>
 

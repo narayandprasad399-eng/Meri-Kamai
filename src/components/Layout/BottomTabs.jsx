@@ -3,7 +3,7 @@ import { useState } from 'react'
 const tabs = [
   { id: 'games', icon: '🎮', label: 'Games' },
   { id: 'reels', icon: '🎬', label: 'Reels' },
-  { id: 'english', icon: '🗣️', label: 'English' },
+  { id: 'learn', icon: '🗣️', label: 'Learn' },
 ]
 
 export default function BottomTabs({ active, onChange }) {
