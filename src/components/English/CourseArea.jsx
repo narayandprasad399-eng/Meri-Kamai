@@ -9,7 +9,7 @@ const COURSES = [
     title: 'Speak English Like a Pro!', 
     desc: 'Bina dare, confidence ke sath English bolna seekhein. Interview aur daily life ke liye perfect.', 
     originalPrice: '₹999',
-    price: '₹199',
+    price: '₹299',
     link: 'https://karmiminds.pages,dev', 
     bg: 'linear-gradient(135deg, #ff6b00, #ff9500)',
     icon: '🗣️'
@@ -20,8 +20,8 @@ const COURSES = [
     badgeColor: '#00d1b2',
     title: 'Secure 90%+ in 10th Boards', 
     desc: 'Smart study techniques, focus secrets aur mind-training jo toppers use karte hain.', 
-    originalPrice: '₹1499',
-    price: '₹299',
+    originalPrice: '₹1999',
+    price: '₹999',
     link: 'https://karmiminds.pages.dev', 
     bg: 'linear-gradient(135deg, #23d160, #00b84c)',
     icon: '📚'
@@ -32,8 +32,8 @@ const COURSES = [
     badgeColor: '#b86bff',
     title: 'Earn Money Online (Book Reviews)', 
     desc: 'Ghar baithe kitabein padh kar aur unka review likh kar passive income generate karein.', 
-    originalPrice: '₹499',
-    price: '₹99',
+    originalPrice: '₹1499',
+    price: '₹499',
     link: 'https://karmiminds.pages.dev', 
     bg: 'linear-gradient(135deg, #3273dc, #1d5ec5)',
     icon: '💸'

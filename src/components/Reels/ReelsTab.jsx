@@ -87,21 +87,36 @@ export default function ReelsTab({ portalSlug }) {
   const loadVideos = useCallback(async (cat) => {
     setLoading(true)
     const cacheKey = `mk_reels_cache_${cat}`
+    const timeKey = `mk_reels_time_${cat}` // 🟢 टाइम ट्रैक करने के लिए नई की (Key)
+    
     try {
       let vids = []
       const cachedData = localStorage.getItem(cacheKey)
-      if (cachedData) {
+      const cachedTime = localStorage.getItem(timeKey)
+      
+      // 🟢 2 घंटे (7200000 milliseconds) का टाइम लिमिट
+      const isCacheValid = cachedTime && (Date.now() - parseInt(cachedTime)) < 7200000
+
+      if (cachedData && isCacheValid) {
+        // अगर 2 घंटे के अंदर है, तो पुराना कैशे दिखाओ
         vids = JSON.parse(cachedData)
       } else {
+        // अगर 2 घंटे से पुराना है, तो वर्कर से नया डेटा लाओ
         const data = await fetchReels(cat)
         vids = data.videos || []
-        if (vids.length > 0) localStorage.setItem(cacheKey, JSON.stringify(vids))
+        if (vids.length > 0) {
+          localStorage.setItem(cacheKey, JSON.stringify(vids))
+          localStorage.setItem(timeKey, Date.now().toString()) // 🟢 नया टाइम सेव करो
+        }
       }
+      
       setVideos(applyAISort(shuffle(vids)))
       setCurrentIdx(0)
-    } catch (e) { console.error(e) }
+    } catch (e) { 
+        console.error(e) 
+    }
     setLoading(false)
-  }, [])
+}, [])
 
   useEffect(() => { loadVideos(category) }, [category])
 
