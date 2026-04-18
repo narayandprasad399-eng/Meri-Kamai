@@ -1,44 +1,50 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useGameViews } from '../../hooks/useGameViews'
 
-const FEED_BASE = 'https://feeds.gamepix.com/v2/json?sid=ESGG6&pagination=48'
+const FEED_URL = 'https://feeds.gamepix.com/v2/json?sid=ESGG6&pagination=24&page=1'
 
-// ─── Category Icons ───────────────────────────────────────────────────────────
+// ── LocalStorage helpers ────────────────────────────────────────────────────
+const LS_COUNTS = 'gametab_play_counts'
+const LS_CAT    = 'gametab_cat_counts'
+
+const getLS = (key) => { try { return JSON.parse(localStorage.getItem(key) || '{}') } catch { return {} } }
+const setLS = (key, val) => { try { localStorage.setItem(key, JSON.stringify(val)) } catch {} }
+
+const incCount = (key, id) => {
+  const data = getLS(key)
+  data[id] = (data[id] || 0) + 1
+  setLS(key, data)
+  return data
+}
+
+// ── Category Icons ───────────────────────────────────────────────────────────
 const CAT_ICONS = {
   all: '🎮', action: '⚔️', racing: '🏎️', puzzle: '🧩', sports: '⚽',
   adventure: '🗺️', arcade: '👾', casual: '🎲', strategy: '♟️',
   shooting: '🎯', board: '🎳', cards: '🃏', educational: '📚',
-  music: '🎵', simulation: '🛸', default: '🕹️'
+  music: '🎵', simulation: '🛸', 'mind games': '🧠', ludo: '🎲',
+  default: '🕹️'
 }
-const catIcon = (cat) => CAT_ICONS[cat?.toLowerCase()] || CAT_ICONS.default
+const catIcon = (c) => CAT_ICONS[(c || '').toLowerCase()] || CAT_ICONS.default
 
-// ─── Local storage helpers ────────────────────────────────────────────────────
-const LS_KEY = 'gt_play_counts'
-const getPlayCounts = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}') } catch { return {} } }
-const savePlayCount = (id) => {
-  const counts = getPlayCounts()
-  counts[id] = (counts[id] || 0) + 1
-  localStorage.setItem(LS_KEY, JSON.stringify(counts))
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
 export default function GamesTab({ portalSlug }) {
-  const [allGames, setAllGames]         = useState([])
+  const [games, setGames]               = useState([])
   const [loading, setLoading]           = useState(true)
   const [loadingMore, setLoadingMore]   = useState(false)
   const [nextUrl, setNextUrl]           = useState(null)
   const [activeCategory, setActiveCategory] = useState('All')
   const [searchTerm, setSearchTerm]     = useState('')
-  const [sortMode, setSortMode]         = useState('quality') // quality | name | newest
   const [activeGame, setActiveGame]     = useState(null)
-  const [playCounts, setPlayCounts]     = useState(getPlayCounts)
-  const [view, setView]                 = useState('grid') // grid | list
-  const catBarRef = useRef(null)
+  const [playCounts, setPlayCounts]     = useState(() => getLS(LS_COUNTS))
+  const [catCounts, setCatCounts]       = useState(() => getLS(LS_CAT))
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
+  const gameContainerRef = useRef(null)
   const { startTracking, stopTracking } = useGameViews(portalSlug, activeGame?.id)
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
-  useEffect(() => { fetchGames(FEED_BASE + '&page=1') }, [])
+  // ── Fetch ──────────────────────────────────────────────────────────────
+  useEffect(() => { fetchGames(FEED_URL) }, [])
 
   const fetchGames = async (url, isLoadMore = false) => {
     try {
@@ -46,274 +52,257 @@ export default function GamesTab({ portalSlug }) {
       const res  = await fetch(url)
       const data = await res.json()
       if (data?.items) {
-        setAllGames(prev => isLoadMore ? [...prev, ...data.items] : data.items)
+        setGames(prev => isLoadMore ? [...prev, ...data.items] : data.items)
         setNextUrl(data.next_url || null)
       }
     } catch (e) { console.error('GamePix Error:', e) }
     finally { setLoading(false); setLoadingMore(false) }
   }
 
-  // ── Derived data ────────────────────────────────────────────────────────────
-  const categories = useMemo(() => {
-    const counts = {}
-    allGames.forEach(g => { counts[g.category] = (counts[g.category] || 0) + 1 })
-    return [
-      { name: 'All', count: allGames.length },
-      ...Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, count]) => ({ name, count }))
-    ]
-  }, [allGames])
+  // ── Smart categories: user most played first ───────────────────────────
+  const categories = (() => {
+    if (!games.length) return ['All']
+    const gameCatCount = {}
+    games.forEach(g => { gameCatCount[g.category] = (gameCatCount[g.category] || 0) + 1 })
+    const sorted = Object.keys(gameCatCount).sort((a, b) => {
+      const ua = catCounts[a] || 0
+      const ub = catCounts[b] || 0
+      if (ub !== ua) return ub - ua
+      return gameCatCount[b] - gameCatCount[a]
+    })
+    return ['All', ...sorted]
+  })()
 
-  const topPlayed = useMemo(() => {
-    return Object.entries(playCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([id, count]) => ({ game: allGames.find(g => g.id === id), count }))
-      .filter(x => x.game)
-  }, [playCounts, allGames])
+  // ── Filtered + sorted (played games first within category) ─────────────
+  const sortedFiltered = (() => {
+    let list = games.filter(g => {
+      const matchesCat    = activeCategory === 'All' || g.category === activeCategory
+      const matchesSearch = g.title.toLowerCase().includes(searchTerm.toLowerCase())
+      return matchesCat && matchesSearch
+    })
+    return [...list].sort((a, b) => {
+      const pa = playCounts[a.id] || 0
+      const pb = playCounts[b.id] || 0
+      if (pb !== pa) return pb - pa
+      return b.quality_score - a.quality_score
+    })
+  })()
 
-  const filtered = useMemo(() => {
-    let list = allGames
-    if (activeCategory !== 'All') list = list.filter(g => g.category === activeCategory)
-    if (searchTerm) {
-      const q = searchTerm.toLowerCase()
-      list = list.filter(g =>
-        g.title.toLowerCase().includes(q) ||
-        g.category?.toLowerCase().includes(q)
-      )
-    }
-    if (sortMode === 'quality') return [...list].sort((a, b) => b.quality_score - a.quality_score)
-    if (sortMode === 'name')    return [...list].sort((a, b) => a.title.localeCompare(b.title))
-    if (sortMode === 'newest')  return [...list].sort((a, b) => new Date(b.date_published) - new Date(a.date_published))
-    return list
-  }, [allGames, activeCategory, searchTerm, sortMode])
-
-  // ── Game open/close ─────────────────────────────────────────────────────────
-  const openGame = (game) => {
-    savePlayCount(game.id)
-    setPlayCounts(getPlayCounts())
+  // ── Open game ──────────────────────────────────────────────────────────
+  const openGame = useCallback(async (game) => {
+    const newPlays = incCount(LS_COUNTS, game.id)
+    const newCats  = incCount(LS_CAT, game.category)
+    setPlayCounts(newPlays)
+    setCatCounts(newCats)
     setActiveGame(game)
     startTracking()
-  }
-  const closeGame = () => { stopTracking(); setActiveGame(null) }
 
-  // ── Scroll active category into view ───────────────────────────────────────
+    // Try to lock orientation
+    try {
+      const target = game.orientation === 'landscape' ? 'landscape' : 'portrait'
+      if (screen?.orientation?.lock) await screen.orientation.lock(target)
+    } catch (e) {
+      console.warn('Orientation lock not supported:', e.message)
+    }
+  }, [startTracking])
+
+  // ── Close game ─────────────────────────────────────────────────────────
+  const closeGame = useCallback(async () => {
+    stopTracking()
+    setActiveGame(null)
+    setIsFullscreen(false)
+    try { if (screen?.orientation?.unlock) screen.orientation.unlock() } catch {}
+    try { if (document.fullscreenElement) await document.exitFullscreen() } catch {}
+  }, [stopTracking])
+
+  // ── Fullscreen toggle ──────────────────────────────────────────────────
+  const toggleFullscreen = useCallback(async () => {
+    const el = gameContainerRef.current
+    if (!el) return
+    try {
+      if (!document.fullscreenElement) {
+        await el.requestFullscreen({ navigationUI: 'hide' })
+        setIsFullscreen(true)
+        // Re-lock orientation after entering fullscreen (needed on Android Chrome)
+        if (activeGame && screen?.orientation?.lock) {
+          const target = activeGame.orientation === 'landscape' ? 'landscape' : 'portrait'
+          await screen.orientation.lock(target).catch(() => {})
+        }
+      } else {
+        await document.exitFullscreen()
+        setIsFullscreen(false)
+      }
+    } catch { setIsFullscreen(prev => !prev) }
+  }, [activeGame])
+
   useEffect(() => {
-    if (!catBarRef.current) return
-    const active = catBarRef.current.querySelector('[data-active="true"]')
-    active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-  }, [activeCategory])
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
 
-  // ════════════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════════
   // GAME PLAYER VIEW
-  // ════════════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════════
   if (activeGame) {
     return (
-      <div style={{ height: 'calc(100dvh - var(--tab-h) - 57px)', display: 'flex', flexDirection: 'column', background: '#000' }}>
-        <div style={{
-          padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px',
-          background: 'var(--bg-alt)', borderBottom: '1px solid var(--border)', zIndex: 10
-        }}>
-          <button onClick={closeGame} style={{
-            background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff',
-            width: '34px', height: '34px', borderRadius: '8px', fontSize: '18px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-          }}>←</button>
-          <img src={activeGame.image} alt="" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }} />
-          <span style={{ fontFamily: 'Teko, sans-serif', fontSize: '20px', fontWeight: 700, color: '#fff', flex: 1 }}>
-            {activeGame.title}
-          </span>
-          <span style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '12px', color: '#ff9500', textTransform: 'capitalize', background: 'rgba(255,149,0,0.12)', padding: '3px 9px', borderRadius: '20px' }}>
-            {catIcon(activeGame.category)} {activeGame.category}
-          </span>
+      <>
+        <style>{`
+          .gt-game-wrap {
+            height: calc(100dvh - var(--tab-h) - 57px);
+            display: flex; flex-direction: column; background: #000;
+          }
+          .gt-game-wrap.gt-fs {
+            position: fixed !important; inset: 0 !important;
+            height: 100dvh !important; width: 100dvw !important;
+            z-index: 9999 !important;
+          }
+          .gt-iframe-box { flex: 1; position: relative; overflow: hidden; background: #000; }
+          .gt-iframe-box iframe { width: 100%; height: 100%; border: none; display: block; }
+          @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        `}</style>
+
+        <div ref={gameContainerRef} className={`gt-game-wrap${isFullscreen ? ' gt-fs' : ''}`}>
+
+          {/* Top bar */}
+          <div style={{
+            padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '10px',
+            background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0
+          }}>
+            <button onClick={closeGame} style={{
+              background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff',
+              width: '34px', height: '34px', borderRadius: '8px', fontSize: '18px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>←</button>
+
+            <img src={activeGame.image} alt="" style={{ width: '26px', height: '26px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0 }} />
+
+            <span style={{ fontFamily: 'Teko, sans-serif', fontSize: '20px', fontWeight: 700, color: '#fff', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {activeGame.title}
+            </span>
+
+            {/* Orientation badge */}
+            <span style={{
+              fontFamily: 'Rajdhani, sans-serif', fontSize: '11px', color: '#ff9500',
+              background: 'rgba(255,149,0,0.1)', padding: '3px 8px', borderRadius: '6px', flexShrink: 0
+            }}>
+              {activeGame.orientation === 'landscape' ? '↔️ Landscape' : '↕️ Portrait'}
+            </span>
+
+            {/* Fullscreen button */}
+            <button onClick={toggleFullscreen} style={{
+              background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff',
+              width: '34px', height: '34px', borderRadius: '8px', fontSize: '16px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }} title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}>
+              {isFullscreen ? '✕' : '⛶'}
+            </button>
+          </div>
+
+          {/* Iframe */}
+          <div className="gt-iframe-box">
+            <iframe
+              src={activeGame.url}
+              allow="autoplay; fullscreen; payment; gyroscope; accelerometer; screen-orientation"
+              allowFullScreen
+              title={activeGame.title}
+              scrolling="no"
+            />
+            {/* Rotate hint for landscape games */}
+            {activeGame.orientation === 'landscape' && <RotateHint />}
+          </div>
         </div>
-        <iframe
-          src={activeGame.url}
-          style={{ flex: 1, border: 'none', width: '100%', background: '#000' }}
-          allow="autoplay; fullscreen; payment"
-          title={activeGame.title}
-          scrolling="no"
-        />
-      </div>
+      </>
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // MAIN BROWSE VIEW
-  // ════════════════════════════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════════
+  // BROWSE VIEW
+  // ════════════════════════════════════════════════════════════════════════
   return (
     <div style={{ padding: '12px 16px 24px', animation: 'fadeUp 0.3s ease' }}>
 
-      {/* ── Search Bar ── */}
+      {/* Search */}
       <div style={{ marginBottom: '14px', position: 'relative' }}>
         <input
           type="text"
-          placeholder="Search games or category..."
+          placeholder="Search games (Ludo, Racing...)"
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           style={{
-            width: '100%', background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px',
-            padding: '11px 40px 11px 42px', color: '#fff', fontSize: '14px',
-            outline: 'none', fontFamily: 'Rajdhani, sans-serif', boxSizing: 'border-box'
+            width: '100%', boxSizing: 'border-box',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px', padding: '12px 40px 12px 40px',
+            color: '#fff', fontSize: '14px', outline: 'none',
+            fontFamily: 'Rajdhani, sans-serif'
           }}
         />
-        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '16px', opacity: 0.5 }}>🔍</span>
+        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
         {searchTerm && (
           <button onClick={() => setSearchTerm('')} style={{
             position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-            background: 'rgba(255,255,255,0.08)', border: 'none', color: '#aaa',
-            width: '22px', height: '22px', borderRadius: '50%', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px'
+            background: 'rgba(255,255,255,0.1)', border: 'none', color: '#aaa',
+            width: '22px', height: '22px', borderRadius: '50%', cursor: 'pointer', fontSize: '12px'
           }}>✕</button>
         )}
       </div>
 
-      {/* ── Category Scroll Bar ── */}
-      <div ref={catBarRef} style={{
-        display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px',
-        scrollbarWidth: 'none', marginBottom: '4px'
-      }}>
-        {categories.map(({ name, count }) => {
-          const isActive = activeCategory === name
+      {/* Categories — user's most played first, 🔥 badge on played ones */}
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none', marginBottom: '8px' }}>
+        {categories.map(cat => {
+          const isActive   = activeCategory === cat
+          const userPlays  = catCounts[cat] || 0
           return (
-            <button
-              key={name}
-              data-active={isActive}
-              onClick={() => setActiveCategory(name)}
-              style={{
-                background: isActive ? 'linear-gradient(135deg,#ff6b00,#ff9500)' : 'rgba(255,255,255,0.05)',
-                border: '1px solid',
-                borderColor: isActive ? 'transparent' : 'rgba(255,255,255,0.08)',
-                color: isActive ? '#000' : '#9090b0',
-                padding: '6px 12px', borderRadius: '20px',
-                fontSize: '12px', fontWeight: 700, whiteSpace: 'nowrap',
-                textTransform: 'capitalize', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '5px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <span>{catIcon(name)}</span>
-              <span>{name === 'All' ? 'All' : name}</span>
-              <span style={{ opacity: 0.6, fontSize: '11px' }}>{count}</span>
+            <button key={cat} onClick={() => setActiveCategory(cat)} style={{
+              background: isActive ? 'linear-gradient(135deg,#ff6b00,#ff9500)' : 'rgba(255,255,255,0.05)',
+              border: '1px solid',
+              borderColor: isActive ? 'transparent' : userPlays > 0 ? 'rgba(255,149,0,0.3)' : 'rgba(255,255,255,0.08)',
+              color: isActive ? '#000' : userPlays > 0 ? '#ffb84d' : '#9090b0',
+              padding: '6px 13px', borderRadius: '20px', fontSize: '13px', fontWeight: 700,
+              whiteSpace: 'nowrap', textTransform: 'capitalize', cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: '5px'
+            }}>
+              <span>{catIcon(cat)}</span>
+              <span>{cat}</span>
+              {userPlays > 0 && cat !== 'All' && <span style={{ fontSize: '10px' }}>🔥</span>}
             </button>
           )
         })}
       </div>
 
-      {/* ── Top Played Section ── */}
-      {topPlayed.length > 0 && !searchTerm && activeCategory === 'All' && (
-        <div style={{ marginBottom: '18px' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px'
-          }}>
-            <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '11px', fontWeight: 800, color: '#ff9500', letterSpacing: '0.08em' }}>🔥 TOP PLAYED</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,149,0,0.15)' }} />
-          </div>
-          <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
-            {topPlayed.map(({ game, count }) => (
-              <div key={game.id} onClick={() => openGame(game)} style={{
-                flexShrink: 0, width: '80px', cursor: 'pointer', position: 'relative'
-              }}>
-                <div style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1.5px solid rgba(255,149,0,0.3)' }}>
-                  <img src={game.image} alt={game.title} style={{ width: '80px', height: '80px', objectFit: 'cover', display: 'block' }} />
-                  <div style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    background: 'linear-gradient(transparent,rgba(0,0,0,0.8))',
-                    padding: '12px 4px 4px', textAlign: 'center'
-                  }}>
-                    <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '9px', color: '#ff9500', fontWeight: 800 }}>▶ {count}x</span>
-                  </div>
-                </div>
-                <div style={{ marginTop: '5px', fontFamily: 'Rajdhani, sans-serif', fontSize: '11px', color: '#ccc', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{game.title}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Sort + Count Bar ── */}
-      {!loading && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', gap: '8px' }}>
-          <span style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '13px', color: '#666' }}>
-            {filtered.length} game{filtered.length !== 1 ? 's' : ''}
-            {activeCategory !== 'All' ? ` in ${activeCategory}` : ''}
-            {searchTerm ? ` for "${searchTerm}"` : ''}
-          </span>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {/* Sort buttons */}
-            {[['quality','⭐'],['name','🔤'],['newest','🆕']].map(([mode, icon]) => (
-              <button key={mode} onClick={() => setSortMode(mode)} style={{
-                background: sortMode === mode ? 'rgba(255,149,0,0.15)' : 'rgba(255,255,255,0.04)',
-                border: '1px solid', borderColor: sortMode === mode ? 'rgba(255,149,0,0.4)' : 'rgba(255,255,255,0.07)',
-                color: sortMode === mode ? '#ff9500' : '#555',
-                padding: '4px 8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer',
-                fontFamily: 'Rajdhani, sans-serif', fontWeight: 700
-              }}>{icon}</button>
-            ))}
-            {/* Grid/List toggle */}
-            <button onClick={() => setView(v => v === 'grid' ? 'list' : 'grid')} style={{
-              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
-              color: '#666', padding: '4px 8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer'
-            }}>{view === 'grid' ? '☰' : '⊞'}</button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Loading State ── */}
       {loading && !loadingMore ? (
-        <div style={{ textAlign: 'center', padding: '60px 40px', color: '#ff9500', fontFamily: 'Orbitron, sans-serif', fontWeight: 800, fontSize: '13px', letterSpacing: '0.05em' }}>
-          <div style={{ fontSize: '28px', marginBottom: '12px', animation: 'spin 1.2s linear infinite', display: 'inline-block' }}>🎮</div>
-          <br />LOADING GAMES...
-          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#ff9500', fontFamily: 'Orbitron, sans-serif', fontWeight: 800 }}>
+          Loading Games...
         </div>
       ) : (
         <>
-          {/* ── Grid View ── */}
-          {view === 'grid' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              {filtered.map(game => (
-                <GameCard key={game.id} game={game} playCount={playCounts[game.id] || 0} onPlay={() => openGame(game)} />
-              ))}
+          {searchTerm && (
+            <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '13px', color: '#555', marginBottom: '10px' }}>
+              {sortedFiltered.length} results for "{searchTerm}"
             </div>
           )}
 
-          {/* ── List View ── */}
-          {view === 'list' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {filtered.map(game => (
-                <GameRow key={game.id} game={game} playCount={playCounts[game.id] || 0} onPlay={() => openGame(game)} />
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {sortedFiltered.map(game => (
+              <GameCard key={game.id} game={game} playCount={playCounts[game.id] || 0} onPlay={() => openGame(game)} />
+            ))}
+          </div>
 
-          {/* ── Empty State ── */}
-          {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '50px 20px' }}>
-              <div style={{ fontSize: '32px', marginBottom: '10px' }}>🕹️</div>
-              <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: '13px', color: '#444', fontWeight: 700 }}>NO GAMES FOUND</div>
-              <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '14px', color: '#555', marginTop: '6px' }}>Try a different search or category</div>
-            </div>
-          )}
-
-          {/* ── Load More ── */}
           {nextUrl && !searchTerm && (
-            <div style={{ textAlign: 'center', marginTop: '24px' }}>
-              <button
-                onClick={() => fetchGames(nextUrl, true)}
-                disabled={loadingMore}
-                style={{
-                  background: loadingMore ? 'rgba(255,255,255,0.04)' : 'rgba(255,149,0,0.08)',
-                  border: '1px solid rgba(255,149,0,0.25)', color: loadingMore ? '#555' : '#ff9500',
-                  padding: '11px 28px', borderRadius: '12px', fontSize: '13px', fontWeight: 800,
-                  cursor: loadingMore ? 'default' : 'pointer', fontFamily: 'Orbitron, sans-serif',
-                  letterSpacing: '0.04em', transition: 'all 0.2s'
-                }}
-              >
-                {loadingMore ? '⏳ LOADING...' : 'LOAD MORE GAMES ↓'}
+            <div style={{ textAlign: 'center', marginTop: '24px', paddingBottom: '20px' }}>
+              <button onClick={() => fetchGames(nextUrl, true)} disabled={loadingMore} style={{
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff', padding: '10px 24px', borderRadius: '12px',
+                fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Orbitron, sans-serif'
+              }}>
+                {loadingMore ? 'Loading...' : 'LOAD MORE GAMES ↓'}
               </button>
             </div>
+          )}
+
+          {sortedFiltered.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>No games found</div>
           )}
         </>
       )}
@@ -321,78 +310,68 @@ export default function GamesTab({ portalSlug }) {
   )
 }
 
-// ─── Game Card (Grid) ─────────────────────────────────────────────────────────
-function GameCard({ game, onPlay, playCount }) {
-  const stars = (game.quality_score * 5).toFixed(1)
-  const hasPlayed = playCount > 0
+// ── Rotate Hint overlay (auto-hides after 3s) ─────────────────────────────────
+function RotateHint() {
+  const [visible, setVisible] = useState(true)
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(false), 3500)
+    return () => clearTimeout(t)
+  }, [])
+  if (!visible) return null
   return (
-    <div
-      onClick={onPlay}
-      style={{
-        background: 'var(--card)', border: '1px solid var(--border)',
-        borderRadius: '16px', overflow: 'hidden', position: 'relative',
-        cursor: 'pointer', transition: 'transform 0.15s, border-color 0.15s',
-        borderColor: hasPlayed ? 'rgba(255,149,0,0.3)' : 'var(--border)'
-      }}
-      onTouchStart={e => e.currentTarget.style.transform = 'scale(0.97)'}
-      onTouchEnd={e => e.currentTarget.style.transform = 'scale(1)'}
-    >
-      {hasPlayed && (
-        <div style={{
-          position: 'absolute', top: '8px', right: '8px', zIndex: 2,
-          background: 'rgba(255,149,0,0.85)', borderRadius: '8px',
-          padding: '2px 6px', fontSize: '9px', fontFamily: 'Orbitron, sans-serif',
-          fontWeight: 800, color: '#000'
-        }}>▶ {playCount}x</div>
-      )}
-      <div style={{ aspectRatio: '1', background: '#111' }}>
-        <img src={game.image} alt={game.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-      <div style={{ padding: '8px 10px 10px' }}>
-        <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '14px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {game.title}
+    <div style={{
+      position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+      background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,149,0,0.35)',
+      borderRadius: '12px', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '10px',
+      pointerEvents: 'none', zIndex: 20, whiteSpace: 'nowrap'
+    }}>
+      <span style={{ fontSize: '22px' }}>📱</span>
+      <div>
+        <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '13px', fontWeight: 700, color: '#ff9500' }}>
+          Phone rotate karo ↔️
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', marginTop: '5px' }}>
-          <span style={{ color: '#ff9500', fontFamily: 'Rajdhani, sans-serif', fontWeight: 700 }}>⭐ {stars}</span>
-          <span style={{ color: '#555', textTransform: 'capitalize', fontFamily: 'Rajdhani, sans-serif', fontSize: '11px' }}>
-            {catIcon(game.category)} {game.category}
-          </span>
+        <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '11px', color: '#888' }}>
+          Yeh game landscape mein best hai
         </div>
       </div>
     </div>
   )
 }
 
-// ─── Game Row (List) ──────────────────────────────────────────────────────────
-function GameRow({ game, onPlay, playCount }) {
-  const stars = (game.quality_score * 5).toFixed(1)
+// ── Game Card ─────────────────────────────────────────────────────────────────
+function GameCard({ game, onPlay, playCount }) {
   return (
-    <div
-      onClick={onPlay}
-      style={{
-        display: 'flex', gap: '12px', alignItems: 'center',
-        background: 'var(--card)', border: '1px solid var(--border)',
-        borderRadius: '14px', padding: '10px', cursor: 'pointer',
-        borderColor: playCount > 0 ? 'rgba(255,149,0,0.25)' : 'var(--border)'
-      }}
-    >
-      <div style={{ flexShrink: 0, width: '56px', height: '56px', borderRadius: '10px', overflow: 'hidden', background: '#111' }}>
+    <div onClick={onPlay} style={{
+      background: 'var(--card)',
+      border: `1px solid ${playCount > 0 ? 'rgba(255,149,0,0.3)' : 'var(--border)'}`,
+      borderRadius: '16px', overflow: 'hidden', position: 'relative', cursor: 'pointer'
+    }}>
+      {playCount > 0 && (
+        <div style={{
+          position: 'absolute', top: '8px', right: '8px', zIndex: 2,
+          background: 'rgba(255,149,0,0.9)', borderRadius: '8px',
+          padding: '2px 7px', fontSize: '9px',
+          fontFamily: 'Orbitron, sans-serif', fontWeight: 800, color: '#000'
+        }}>▶ {playCount}x</div>
+      )}
+      {game.orientation === 'landscape' && (
+        <div style={{
+          position: 'absolute', top: '8px', left: '8px', zIndex: 2,
+          background: 'rgba(0,0,0,0.6)', borderRadius: '6px',
+          padding: '2px 6px', fontSize: '9px', color: '#aaa'
+        }}>↔️</div>
+      )}
+      <div style={{ aspectRatio: '1', background: '#111' }}>
         <img src={game.image} alt={game.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '15px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ padding: '10px' }}>
+        <div style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '14px', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {game.title}
         </div>
-        <div style={{ display: 'flex', gap: '8px', marginTop: '3px', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'Rajdhani, sans-serif', fontSize: '12px', color: '#555', textTransform: 'capitalize' }}>
-            {catIcon(game.category)} {game.category}
-          </span>
-          <span style={{ color: '#ff9500', fontSize: '12px', fontFamily: 'Rajdhani, sans-serif' }}>⭐ {stars}</span>
-          {playCount > 0 && <span style={{ fontSize: '11px', color: '#ff9500', fontFamily: 'Orbitron, sans-serif', fontWeight: 800 }}>▶ {playCount}x</span>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '4px' }}>
+          <span style={{ color: '#ff9500' }}>⭐ {(game.quality_score * 5).toFixed(1)}</span>
+          <span style={{ color: '#666', textTransform: 'capitalize' }}>{catIcon(game.category)} {game.category}</span>
         </div>
-      </div>
-      <div style={{ flexShrink: 0, background: 'linear-gradient(135deg,#ff6b00,#ff9500)', borderRadius: '10px', padding: '8px 12px', fontFamily: 'Orbitron, sans-serif', fontSize: '11px', fontWeight: 800, color: '#000' }}>
-        PLAY
       </div>
     </div>
   )
