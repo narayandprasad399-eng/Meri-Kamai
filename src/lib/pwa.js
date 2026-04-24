@@ -1,55 +1,47 @@
-// Origin-based PWA
-// merikamai.in → dashboard manifest
-// merikamai.in/username → portal manifest
+// pwa.js — Dynamic PWA Generator
+export const setupPWA = (portalName, slug) => {
+  if (!portalName || !slug) return;
 
-export const setupPWA = (portalName, username) => {
-  const isPortal = !!username
-  const manifestUrl = isPortal ? '/manifest-portal.json' : '/manifest-dashboard.json'
+  // 1. Browser ka title badlo
+  document.title = portalName;
 
-  // Dynamic manifest
-  let link = document.querySelector('link[rel="manifest"]')
-  if (!link) { link = document.createElement('link'); link.rel = 'manifest'; document.head.appendChild(link) }
-  link.href = manifestUrl
+  // 2. Dynamic Manifest Object banao
+  const myDynamicManifest = {
+    short_name: portalName,
+    name: portalName,
+    description: `Welcome to ${portalName} - Powered by Meri Kamai`,
+    icons: [
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any maskable"
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png"
+      }
+    ],
+    start_url: `/${slug}`,
+    display: "standalone",
+    theme_color: "#0a0a0a",
+    background_color: "#0a0a0a"
+  };
 
-  // Portal name update karo manifest mein
-  if (isPortal && portalName) {
-    const manifest = {
-      name: portalName,
-      short_name: portalName.slice(0, 12),
-      description: `${portalName} - Games, Reels & English`,
-      start_url: `/${username}`,
-      display: 'standalone',
-      background_color: '#05050a',
-      theme_color: '#ff6b00',
-      orientation: 'portrait',
-      icons: [
-        { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-      ]
-    }
-    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' })
-    link.href = URL.createObjectURL(blob)
-  }
+  // 3. Manifest ko 'Blob' (Dynamic URL) me badlo
+  const stringManifest = JSON.stringify(myDynamicManifest);
+  const blob = new Blob([stringManifest], { type: 'application/json' });
+  const manifestURL = URL.createObjectURL(blob);
 
-  // Theme color
-  let meta = document.querySelector('meta[name="theme-color"]')
-  if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta) }
-  meta.content = '#ff6b00'
-}
+  // 4. Purane manifest link ko hatao aur naya lagao
+  const oldManifest = document.querySelector('link[rel="manifest"]');
+  if (oldManifest) oldManifest.remove();
 
-// PWA install prompt
-let deferredPrompt = null
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault()
-  deferredPrompt = e
-})
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = manifestURL;
+  document.head.appendChild(link);
 
-export const showInstallPrompt = async () => {
-  if (!deferredPrompt) return false
-  deferredPrompt.prompt()
-  const { outcome } = await deferredPrompt.userChoice
-  deferredPrompt = null
-  return outcome === 'accepted'
-}
-
-export const canInstall = () => !!deferredPrompt
+  console.log(`✅ PWA Manifest Updated for: ${portalName}`);
+};

@@ -1,9 +1,12 @@
 import { useState } from 'react'
 
+// 🟢 Yahan 'Earn' wala naya tab add kar diya hai
 const tabs = [
   { id: 'games', icon: '🎮', label: 'Games' },
   { id: 'reels', icon: '🎬', label: 'Reels' },
+  { id: 'earn', icon: '💰', label: 'Earn' },
   { id: 'english', icon: '🗣️', label: 'English' },
+  { id: 'offers', icon: '🎁', label: 'Offers' },
 ]
 
 export default function BottomTabs({ active, onChange }) {

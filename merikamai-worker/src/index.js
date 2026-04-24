@@ -11,6 +11,8 @@
 import { handleYouTube } from './youtube'
 import { handlePaymentCreate, handlePaymentVerify } from './payment'
 import { handleSubscription } from './subscription'
+import { handleWannadsPostback } from './postback'
+import { handleTrackClick } from './analytics'
 
 export default {
   async fetch(request, env, ctx) {
@@ -45,6 +47,12 @@ export default {
       else if (path === '/subscription/create' && request.method === 'POST') {
         response = await handleSubscription(request, env)
       }
+      else if (path === '/postback/wannads') {
+  response = await handleWannadsPostback(request, env)
+}
+else if (path === '/track/click' && request.method === 'POST') {
+  response = await handleTrackClick(request, env)
+}
       else if (path === '/health') {
         response = new Response(JSON.stringify({ status: 'ok', time: new Date().toISOString() }), {
           headers: { 'Content-Type': 'application/json' }

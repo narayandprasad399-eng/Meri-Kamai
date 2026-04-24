@@ -6,10 +6,11 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // Auth helpers
-export const signInWithGoogle = async () => {
+// 🟢 Update kiya gaya auth helper
+export const signInWithGoogle = async (redirectPath = '/dashboard') => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${window.location.origin}/dashboard` }
+    options: { redirectTo: `${window.location.origin}${redirectPath}` }
   })
   return { data, error }
 }

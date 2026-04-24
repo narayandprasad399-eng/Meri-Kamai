@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { getPortal } from '../lib/supabase'
+
+// 🟢 1. Supabase aur useAuth ko yahan import kiya hai
+import { getPortal, supabase } from '../lib/supabase' 
+import { useAuth } from '../hooks/useAuth'
 import { setupPWA } from '../lib/pwa'
+
 import Navbar from '../components/Layout/Navbar'
 import BottomTabs from '../components/Layout/BottomTabs'
 import GamesTab from '../components/Games/GamesTab'
@@ -9,13 +13,21 @@ import ReelsTab from '../components/Reels/ReelsTab'
 import CourseArea from '../components/English/CourseArea'
 import InstallBanner from '../components/Layout/InstallBanner'
 
+// 🟢 YAHAN HAI ASLI FIX: Missing Imports add kar diye gaye hain
+import EarnTab from '../components/Earn/EarnTab'
+import OffersTab from '../components/Offers/OffersTab'
+
 export default function Portal() {
+  // 🟢 2. SAARE HOOKS SABSE UPAR (Rules of Hooks)
   const { username } = useParams()
+  const { user } = useAuth() 
+  
   const [activeTab, setActiveTab] = useState('games')
   const [portal, setPortal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
+  // 🟢 3. Portal Data Load karne ka logic
   useEffect(() => {
     const load = async () => {
       if (username === 'demo') {
@@ -26,8 +38,9 @@ export default function Portal() {
         return
       }
       const { data, error } = await getPortal(username)
-      if (error || !data) { setNotFound(true) }
-      else {
+      if (error || !data) { 
+        setNotFound(true) 
+      } else {
         setPortal(data)
         setupPWA(data.portal_name, data.slug)
       }
@@ -36,6 +49,28 @@ export default function Portal() {
     load()
   }, [username])
 
+  // 🟢 4. User ko Creator se Bind Karne ka logic (Referral)
+  useEffect(() => {
+    const bindUserToCreator = async () => {
+      if (user && username && username !== 'demo') {
+        const { data } = await supabase
+          .from('profiles')
+          .select('referred_by')
+          .eq('user_id', user.id)
+          .single()
+
+        if (!data || !data.referred_by) {
+          await supabase.from('profiles').upsert({
+            user_id: user.id,
+            referred_by: username 
+          })
+        }
+      }
+    }
+    bindUserToCreator()
+  }, [user, username])
+
+  // 🛑 HOOKS ke baad hi 'if' conditions lagani hain
   if (loading) return <LoadingScreen />
   if (notFound) return <NotFoundScreen username={username} />
 
@@ -47,6 +82,9 @@ export default function Portal() {
         {activeTab === 'games' && <GamesTab selectedGames={portal?.selected_games} portalSlug={portal?.slug} />}
         {activeTab === 'reels' && <ReelsTab portalSlug={portal?.slug} />}
         {activeTab === 'english' && <CourseArea />}
+        {/* 🟢 Ab ye dono crash nahi honge */}
+        {activeTab === 'earn' && <EarnTab userId={portal?.slug} />}
+        {activeTab === 'offers' && <OffersTab />}
       </div>
       <BottomTabs active={activeTab} onChange={setActiveTab} />
     </div>
