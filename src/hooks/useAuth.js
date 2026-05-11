@@ -1,24 +1,32 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+// ================================================
+// hooks/useAuth.js — Worker Cookie Session
+// Supabase useAuth replace kar diya
+// ================================================
 
-export const useAuth = () => {
-  const [user, setUser] = useState(null)
+import { useState, useEffect } from 'react'
+import { api } from '../lib/api'
+
+export function useAuth() {
+  const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
+  const [portal,  setPortal]  = useState(null)
 
   useEffect(() => {
-    // Current session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
+    const checkSession = async () => {
+      try {
+        const data = await api.get('/auth/session')
+        if (data.user) {
+          setUser(data.user)
+          setPortal(data.portal || null)
+        }
+      } catch (e) {
+        console.log('Session check failed:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    checkSession()
   }, [])
 
-  return { user, loading }
+  return { user, loading, portal, setPortal }
 }

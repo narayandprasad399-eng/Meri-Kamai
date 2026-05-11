@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useGameViews } from '../../hooks/useGameViews'
+const WORKER_URL = import.meta.env.VITE_WORKER_URL
 
 const SID = 'ESGG6'
 const PER_CAT = 12   // ← Kitne games per category chahiye (change kar sakte ho)
@@ -51,7 +51,14 @@ export default function GamesTab({ portalSlug }) {
   const [catLoadingMore, setCatLoadingMore] = useState(null)
 
   const gameContainerRef = useRef(null)
-  const { startTracking, stopTracking } = useGameViews(portalSlug, activeGame?.id)
+  const trackGameClick = () => {
+  if (!portalSlug) return
+  fetch(`${WORKER_URL}/portal/analytics`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug: portalSlug, type: 'game_clicks' })
+  }).catch(() => {})
+}
 
   // ── Initial: fetch all categories in parallel ──────────────────────────
   useEffect(() => {

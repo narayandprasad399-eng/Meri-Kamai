@@ -1,4 +1,4 @@
-import { signInWithGoogle } from '../../lib/supabase'
+import { signInWithGoogle } from '../../lib/api'
 
 export function GoogleLogin({ onGuest }) {
   const handleGoogle = async () => {

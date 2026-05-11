@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signInWithGoogle } from '../lib/supabase'
+import { signInWithGoogle } from '../../lib/api'
 
 export default function Home() {
   const [loading, setLoading] = useState(false)

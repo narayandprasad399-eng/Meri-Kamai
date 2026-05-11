@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const WORKER_URL = import.meta.env.VITE_CF_WORKER_URL
+const WORKER_URL = import.meta.env.VITE_WORKER_URL
 
 // Razorpay script load karo
 const loadRazorpay = () => new Promise((resolve) => {

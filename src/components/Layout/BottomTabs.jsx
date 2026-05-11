@@ -4,7 +4,7 @@ import { useState } from 'react'
 const tabs = [
   { id: 'games', icon: '🎮', label: 'Games' },
   { id: 'reels', icon: '🎬', label: 'Reels' },
-  { id: 'earn', icon: '💰', label: 'Earn' },
+ 
   { id: 'english', icon: '🗣️', label: 'English' },
   { id: 'offers', icon: '🎁', label: 'Offers' },
 ]

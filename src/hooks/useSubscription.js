@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const WORKER_URL = import.meta.env.VITE_CF_WORKER_URL
+const WORKER_URL = import.meta.env.VITE_WORKER_URL
 
 export const useSubscription = (userId) => {
   const [subscription, setSubscription] = useState(null)
@@ -16,7 +16,7 @@ export const useSubscription = (userId) => {
 
   const checkSubscription = async () => {
     try {
-      const res = await fetch(`${WORKER_URL}/subscription/create`, {
+      const res = await fetch(`${WORKER_URL}/portal/dashboard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'check', userId }),

@@ -1,5 +1,5 @@
 // Cloudflare Worker se call hoga - API key safe rahegi
-const WORKER_URL = import.meta.env.VITE_CF_WORKER_URL
+const WORKER_URL = import.meta.env.VITE_WORKER_URL
 
 export const CATEGORIES = [
   { id: 'comedy', label: '😂 Comedy', query: 'funny comedy hindi shorts' },

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 
-// 🟢 1. Supabase aur useAuth ko yahan import kiya hai
-import { getPortal, supabase } from '../lib/supabase' 
+// 🟢 1. API aur useAuth ko yahan import kiya hai (Supabase direct hata diya)
+import { api, WORKER } from '../lib/api'
 import { useAuth } from '../hooks/useAuth'
 import { setupPWA } from '../lib/pwa'
 
@@ -13,8 +13,7 @@ import ReelsTab from '../components/Reels/ReelsTab'
 import CourseArea from '../components/English/CourseArea'
 import InstallBanner from '../components/Layout/InstallBanner'
 
-// 🟢 YAHAN HAI ASLI FIX: Missing Imports add kar diye gaye hain
-import EarnTab from '../components/Earn/EarnTab'
+// 🟢 Missing Imports
 import OffersTab from '../components/Offers/OffersTab'
 
 export default function Portal() {
@@ -37,7 +36,8 @@ export default function Portal() {
         setLoading(false)
         return
       }
-      const { data, error } = await getPortal(username)
+      const data = await api.get(`/portal/${username}`)
+      const error = data.error
       if (error || !data) { 
         setNotFound(true) 
       } else {
@@ -49,26 +49,8 @@ export default function Portal() {
     load()
   }, [username])
 
-  // 🟢 4. User ko Creator se Bind Karne ka logic (Referral)
-  useEffect(() => {
-    const bindUserToCreator = async () => {
-      if (user && username && username !== 'demo') {
-        const { data } = await supabase
-          .from('profiles')
-          .select('referred_by')
-          .eq('user_id', user.id)
-          .single()
-
-        if (!data || !data.referred_by) {
-          await supabase.from('profiles').upsert({
-            user_id: user.id,
-            referred_by: username 
-          })
-        }
-      }
-    }
-    bindUserToCreator()
-  }, [user, username])
+  // 🚀 NAYA: "User ko Creator se Bind Karne ka logic" yahan se puri tarah HATA DIYA gaya hai.
+  // Ab tumhara backend worker auth/google/callback ke time par hi 'referred_by' automatically save kar lega.
 
   // 🛑 HOOKS ke baad hi 'if' conditions lagani hain
   if (loading) return <LoadingScreen />
@@ -81,9 +63,9 @@ export default function Portal() {
       <div style={{ minHeight: 'calc(100vh - var(--tab-h) - 57px)' }}>
         {activeTab === 'games' && <GamesTab selectedGames={portal?.selected_games} portalSlug={portal?.slug} />}
         {activeTab === 'reels' && <ReelsTab portalSlug={portal?.slug} />}
-        {activeTab === 'english' && <CourseArea />}
-        {/* 🟢 Ab ye dono crash nahi honge */}
-        {activeTab === 'earn' && <EarnTab userId={portal?.slug} />}
+        {activeTab === 'english' && <CourseArea portal={portal} />}
+        
+        {/* 🟢 Ab ye crash nahi honge */}
         {activeTab === 'offers' && <OffersTab />}
       </div>
       <BottomTabs active={activeTab} onChange={setActiveTab} />

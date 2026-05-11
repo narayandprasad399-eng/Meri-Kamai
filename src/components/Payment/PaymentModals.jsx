@@ -10,7 +10,7 @@ export function EnglishCoursePayment({ user, onSuccess }) {
       productId: 'english_course',
       userId: user.id,
       userEmail: user.email,
-      userName: user.user_metadata?.full_name,
+      userName: user.name,
       onSuccess: (data) => onSuccess?.(data),
       onFailure: (msg) => alert('Payment failed: ' + msg)
     })
