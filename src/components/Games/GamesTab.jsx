@@ -148,25 +148,28 @@ export default function GamesTab({ portalSlug }) {
   const isInitialLoading = loadingCats.length > 0 && loadedCats.length === 0
 
   // ── Open game ──────────────────────────────────────────────────────────
+  // ── Open game ──────────────────────────────────────────────────────────
   const openGame = useCallback(async (game) => {
     const newPlays = incCount(LS_COUNTS, game.id)
     const newCats  = incCount(LS_CAT, game.category)
     setPlayCounts(newPlays)
     setCatCounts(newCats)
     setActiveGame(game)
-    startTracking()
+    
+    trackGameClick() // ✅ FIX: Sahi function call kiya jo tumne upar define kiya hai
+    
     try {
       const target = game.orientation === 'landscape' ? 'landscape' : 'portrait'
       if (screen?.orientation?.lock) await screen.orientation.lock(target)
     } catch {}
-  }, [startTracking])
+  }, []) // ✅ FIX: Dependency array se startTracking hata diya
 
   // ── Close game ─────────────────────────────────────────────────────────
   const closeGame = useCallback(async () => {
-    stopTracking(); setActiveGame(null); setIsFullscreen(false)
+    setActiveGame(null); setIsFullscreen(false) // ✅ FIX: stopTracking hata diya
     try { if (screen?.orientation?.unlock) screen.orientation.unlock() } catch {}
     try { if (document.fullscreenElement) await document.exitFullscreen() } catch {}
-  }, [stopTracking])
+  }, []) // ✅ FIX: Dependency array se stopTracking hata diya
 
   // ── Fullscreen ─────────────────────────────────────────────────────────
   const toggleFullscreen = useCallback(async () => {
