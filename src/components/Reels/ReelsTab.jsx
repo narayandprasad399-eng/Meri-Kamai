@@ -20,36 +20,18 @@ const applyAISort = (vids) => {
   const interest = getInterest()
   return [...vids].sort((a, b) => (interest[b.category] || 0) - (interest[a.category] || 0))
 }
+// ── PROMO VIDEOS (Sirf ek hi video chalega) ──────────────────
 const PROMO_VIDEOS = [
-  '/videos/promo-english.mp4',
-  '/videos/promo-10th-board.mp4',
-  '/videos/promo-earn-money.mp4'
+  '/videos/promo-earn-money.mp4' // 👈 Bas is ek video ko rakha hai
 ];
-// ── KARMI MINDS COURSES ──────────────────────────
+
+// ── KARMI MINDS COURSES (Sirf English wala ad) ───────────────
 const COURSES = [
   { 
-    id: 1, 
-    title: '🗣️ Speak English Like a Pro!', 
-    desc: 'Confidence badhao, ₹199 mein', 
-    link: 'https://karmiminds.pages.dev', 
-    bg: 'linear-gradient(135deg, #ff6b00, #ff9500)', 
-    text: '#000' 
-  },
-  { 
-    id: 2, 
-    title: '📚 Score 90%+ in 10th Boards', 
-    desc: 'Smart study & mind-training secrets', 
-    link: 'https://karmiminds.pages.dev', 
-    bg: 'linear-gradient(135deg, #23d160, #00b84c)', 
-    text: '#000' 
-  },
-  { 
-    id: 3, 
-    title: '💸 Earn Money Online', 
-    desc: 'Book reviews se paise kamana seekho', 
-    link: 'https://karmiminds.com', 
-    bg: 'linear-gradient(135deg, #3273dc, #1d5ec5)', 
-    text: '#fff' 
+    id: 2, // Tumhare English course ki ID
+    title: '🗣️ Karmi Speak (Learn & Earn)', 
+    desc: 'Bina grammar ratey seedha dimaag se English bolna seekho aur online earning start karo.', 
+    text: '#3b82f6' // Blue theme
   }
 ];
 
