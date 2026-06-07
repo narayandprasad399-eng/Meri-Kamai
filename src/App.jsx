@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
-import Portal from './pages/Portal'
+//import Portal from './pages/Portal'
 import Dashboard from './pages/Dashboard'
 import './index.css'
 import Privacy from './pages/Legal/Privacy';
@@ -14,7 +14,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/:username" element={<Portal />} />
+        
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/refund" element={<Refund />} />

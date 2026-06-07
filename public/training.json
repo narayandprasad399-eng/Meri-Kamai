@@ -1,0 +1,34 @@
+[
+  {
+    "id": "t1",
+    "title": "Welcome to Karmi Minds Partner Program 🚀",
+    "duration": "05:20",
+    "description": "Platform kaise kaam karta hai, earning kaise aati hai, aur aapka pehla target (₹2500) kaise hit karna hai.",
+    "video_url": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/welcome.mp4",
+    "thumbnail": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/thumb_welcome.jpg"
+  },
+  {
+    "id": "t2",
+    "title": "Instagram Reels se Unlimited Leads (0 Cost)",
+    "duration": "12:45",
+    "description": "Bina chehra dikhaye study hacks aur Karmi Minds ke concept videos use karke viral reels kaise banayein.",
+    "video_url": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/insta_reels.mp4",
+    "thumbnail": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/thumb_insta.jpg"
+  },
+  {
+    "id": "t3",
+    "title": "WhatsApp 'Close-the-Deal' Strategy 💬",
+    "duration": "08:30",
+    "description": "Jab student WhatsApp par aaye toh usse kaise baat karein ki wo 10 minute me course purchase kar le. (Copy-Paste Scripts inside).",
+    "video_url": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/whatsapp_close.mp4",
+    "thumbnail": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/thumb_whatsapp.jpg"
+  },
+  {
+    "id": "t4",
+    "title": "Unlocking Custom Prices & Pro Tier ⚡",
+    "duration": "06:15",
+    "description": "₹2500 kamane ke baad apna Custom Price kaise set karein aur apni earning per sale 2X kaise karein.",
+    "video_url": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/pro_tier.mp4",
+    "thumbnail": "https://pub-8ee174aed5ab4483b618b0b7fae9ad81.r2.dev/training/thumb_pro.jpg"
+  }
+]
